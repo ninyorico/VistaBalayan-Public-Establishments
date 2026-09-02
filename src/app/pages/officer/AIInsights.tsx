@@ -209,9 +209,9 @@ export default function AIInsights() {
                   </div>
                   <div className="pl-6 sm:pl-6">
                     <p className="mb-1 text-sm font-medium leading-5 text-gray-700">
-                      {anomaly.establishments?.name || 'Unknown Establishment'}
+                      {anomaly.establishments?.name || 'Municipality-wide'}
                     </p>
-                    <p className="mb-2 text-justify text-sm leading-5 text-gray-600 hyphens-auto" data-ai-text-spacing="justified-even"><AiFormattedText text={anomaly.description} /></p>
+                    <p className="mb-2 text-justify text-sm leading-5 text-gray-600 hyphens-auto indent-5" data-ai-text-spacing="justified-even-indent"><AiFormattedText text={anomaly.description} /></p>
                     {anomaly.recommendation && (
                       <div className="mt-2 rounded-md bg-white/70 px-3 py-2 text-justify text-sm leading-5 text-gray-700 ring-1 ring-black/5 hyphens-auto" data-ai-action-note="justified-even">
                         <span className="font-semibold text-gray-800">Recommendation:</span> <AiFormattedText text={anomaly.recommendation} tone="action" />
@@ -263,7 +263,7 @@ export default function AIInsights() {
                     {insight.impact} impact
                   </span>
                 </div>
-                <p className="mb-2 text-justify text-sm leading-5 text-gray-600 hyphens-auto" data-ai-text-spacing="justified-even"><AiFormattedText text={summary} /></p>
+                <p className="mb-2 text-justify text-sm leading-5 text-gray-600 hyphens-auto indent-5" data-ai-text-spacing="justified-even-indent"><AiFormattedText text={summary} /></p>
                 {action && (
                   <p className="mb-3 rounded-md bg-slate-50 px-3 py-2 text-justify text-sm leading-5 text-gray-800 hyphens-auto" data-ai-action-note="justified-even">
                     <strong className="font-semibold">Action:</strong> <AiFormattedText text={action} tone="action" />

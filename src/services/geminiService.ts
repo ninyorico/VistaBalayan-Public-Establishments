@@ -265,7 +265,7 @@ export const geminiService = {
               "severity": "high|medium|low",
               "description": "describe the anomaly",
               "recommendation": "what to do about it",
-              "establishment": "name of affected establishment",
+              "establishment": "exact establishment name, or Municipality-wide if it affects all establishments",
               "confidence_score": 0.0
             }
           ]
@@ -279,11 +279,13 @@ export const geminiService = {
 
       for (const anomaly of anomalies) {
         let establishmentId = null
-        if (anomaly.establishment) {
+        const establishmentName = anomaly.establishment?.trim()
+        const isMunicipalityWide = !establishmentName || /^municipality[-\s]?wide$/i.test(establishmentName)
+        if (!isMunicipalityWide) {
           const { data: est } = await supabase
             .from('establishments')
             .select('id')
-            .eq('name', anomaly.establishment)
+            .ilike('name', establishmentName)
             .maybeSingle()
           establishmentId = est?.id || null
         }

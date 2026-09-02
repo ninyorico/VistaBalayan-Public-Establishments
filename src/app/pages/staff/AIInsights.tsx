@@ -350,7 +350,7 @@ const loadCachedData = async (estId: string) => {
                     </p>
                   </div>
                   <div className="pl-6 sm:pl-6">
-                    <p className="mb-2 text-justify text-sm leading-5 text-gray-700 hyphens-auto" data-ai-text-spacing="justified-even">
+                    <p className="mb-2 text-justify text-sm leading-5 text-gray-700 hyphens-auto indent-5" data-ai-text-spacing="justified-even-indent">
                       <AiFormattedText text={anomaly.description} />
                     </p>
                     {anomaly.recommendation && (
@@ -404,7 +404,7 @@ const loadCachedData = async (estId: string) => {
                     {insight.impact} impact
                   </span>
                 </div>
-                <p className="mb-2 text-justify text-sm leading-5 text-gray-600 hyphens-auto" data-ai-text-spacing="justified-even"><AiFormattedText text={summary} /></p>
+                <p className="mb-2 text-justify text-sm leading-5 text-gray-600 hyphens-auto indent-5" data-ai-text-spacing="justified-even-indent"><AiFormattedText text={summary} /></p>
                 {action && (
                   <p className="mb-3 rounded-md bg-slate-50 px-3 py-2 text-justify text-sm leading-5 text-gray-800 hyphens-auto" data-ai-action-note="justified-even">
                     <strong className="font-semibold">Action:</strong> <AiFormattedText text={action} tone="action" />
