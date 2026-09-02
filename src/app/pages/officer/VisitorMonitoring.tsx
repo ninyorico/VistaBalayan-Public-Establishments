@@ -365,45 +365,34 @@ export default function VisitorMonitoring({ embedded = false }: { embedded?: boo
                 Swipe sideways to see all table columns.
               </div>
               <div
-                className="max-h-[54dvh] overflow-auto overscroll-contain touch-auto [-webkit-overflow-scrolling:touch] sm:max-h-[60vh]"
+                className="overflow-x-auto overscroll-x-contain touch-auto [-webkit-overflow-scrolling:touch]"
                 onTouchStart={handleTableTouchStart}
                 onTouchMove={handleTableTouchMove}
               >
-                <table className="w-full min-w-[620px] table-fixed sm:min-w-[760px]">
-                  <colgroup>
-                    <col className="w-[20%]" />
-                    <col className="w-[18%]" />
-                    <col className="w-[10%]" />
-                    <col className="w-[10%]" />
-                    <col className="w-[10%]" />
-                    <col className="w-[17%]" />
-                    <col className="w-[15%]" />
-                  </colgroup>
-                  <thead className="bg-white">
-                    <tr>
-                      <th className="sticky top-0 z-30 border-b border-gray-200 bg-white px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 shadow-[0_1px_0_rgba(148,163,184,0.35)] sm:px-4 sm:text-xs">Date</th>
-                      <th className="sticky top-0 z-30 border-b border-gray-200 bg-white px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 shadow-[0_1px_0_rgba(148,163,184,0.35)] sm:px-4 sm:text-xs">Guest/Group</th>
-                      <th className="sticky top-0 z-30 border-b border-gray-200 bg-white px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 shadow-[0_1px_0_rgba(148,163,184,0.35)] sm:px-4 sm:text-xs">Male</th>
-                      <th className="sticky top-0 z-30 border-b border-gray-200 bg-white px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 shadow-[0_1px_0_rgba(148,163,184,0.35)] sm:px-4 sm:text-xs">Female</th>
-                      <th className="sticky top-0 z-30 border-b border-gray-200 bg-white px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 shadow-[0_1px_0_rgba(148,163,184,0.35)] sm:px-4 sm:text-xs">Total</th>
-                      <th className="sticky top-0 z-30 border-b border-gray-200 bg-white px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 shadow-[0_1px_0_rgba(148,163,184,0.35)] sm:px-4 sm:text-xs">Residence</th>
-                      <th className="sticky top-0 z-30 border-b border-gray-200 bg-white px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 shadow-[0_1px_0_rgba(148,163,184,0.35)] sm:px-4 sm:text-xs">Location</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
+                <div className="min-w-[620px] sm:min-w-[760px]">
+                  <div className="grid grid-cols-[20%_18%_10%_10%_10%_17%_15%] border-b border-gray-200 bg-white shadow-[0_1px_0_rgba(148,163,184,0.35)]" data-visitor-records-fixed-header="true">
+                    <div className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sm:px-4 sm:text-xs">Date</div>
+                    <div className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sm:px-4 sm:text-xs">Guest/Group</div>
+                    <div className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sm:px-4 sm:text-xs">Male</div>
+                    <div className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sm:px-4 sm:text-xs">Female</div>
+                    <div className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sm:px-4 sm:text-xs">Total</div>
+                    <div className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sm:px-4 sm:text-xs">Residence</div>
+                    <div className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 sm:px-4 sm:text-xs">Location</div>
+                  </div>
+                  <div className="max-h-[48dvh] divide-y divide-gray-100 overflow-y-auto overflow-x-hidden overscroll-y-contain [-webkit-overflow-scrolling:touch] sm:max-h-[54vh]">
                     {selectedGroup.records.map((record) => (
-                      <tr key={record.id} className="align-top">
-                        <td className="break-words px-2 py-2 text-[11px] text-gray-600 sm:px-4 sm:py-3 sm:text-sm">{record.date}</td>
-                        <td className="break-words px-2 py-2 text-[11px] text-gray-900 sm:px-4 sm:py-3 sm:text-sm">{record.guestName}</td>
-                        <td className="px-2 py-2 text-[11px] font-medium text-blue-600 sm:px-4 sm:py-3 sm:text-sm">{record.male}</td>
-                        <td className="px-2 py-2 text-[11px] font-medium text-purple-600 sm:px-4 sm:py-3 sm:text-sm">{record.female}</td>
-                        <td className="px-2 py-2 text-[11px] font-semibold text-gray-900 sm:px-4 sm:py-3 sm:text-sm">{record.total}</td>
-                        <td className="break-words px-2 py-2 text-[11px] text-gray-600 sm:px-4 sm:py-3 sm:text-sm">{record.residenceType}</td>
-                        <td className="break-words px-2 py-2 text-[11px] text-gray-600 sm:px-4 sm:py-3 sm:text-sm">{record.location}</td>
-                      </tr>
+                      <div key={record.id} className="grid grid-cols-[20%_18%_10%_10%_10%_17%_15%] align-top">
+                        <div className="break-words px-2 py-2 text-[11px] text-gray-600 sm:px-4 sm:py-3 sm:text-sm">{record.date}</div>
+                        <div className="break-words px-2 py-2 text-[11px] text-gray-900 sm:px-4 sm:py-3 sm:text-sm">{record.guestName}</div>
+                        <div className="px-2 py-2 text-[11px] font-medium text-blue-600 sm:px-4 sm:py-3 sm:text-sm">{record.male}</div>
+                        <div className="px-2 py-2 text-[11px] font-medium text-purple-600 sm:px-4 sm:py-3 sm:text-sm">{record.female}</div>
+                        <div className="px-2 py-2 text-[11px] font-semibold text-gray-900 sm:px-4 sm:py-3 sm:text-sm">{record.total}</div>
+                        <div className="break-words px-2 py-2 text-[11px] text-gray-600 sm:px-4 sm:py-3 sm:text-sm">{record.residenceType}</div>
+                        <div className="break-words px-2 py-2 text-[11px] text-gray-600 sm:px-4 sm:py-3 sm:text-sm">{record.location}</div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
