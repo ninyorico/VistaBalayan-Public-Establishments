@@ -10,13 +10,13 @@ import {
   Brain,
   User,
   LogOut,
-  Bell,
   Menu,
   Settings,
   Building2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { canSubmitAccommodationReport, canSubmitVisitorReport } from "../../lib/establishmentReportForms";
+import NotificationCenter from "../components/NotificationCenter";
 
 const menuItems = [
   { path: "/staff", icon: LayoutDashboard, label: "Dashboard" },
@@ -32,7 +32,6 @@ export default function StaffLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [notificationOpen, setNotificationOpen] = useState(false);
   const [establishment, setEstablishment] = useState<any>(null);
 
   useEffect(() => {
@@ -138,67 +137,7 @@ export default function StaffLayout() {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="relative">
-                <button
-                  onClick={() => setNotificationOpen(!notificationOpen)}
-                  className="relative rounded-2xl p-2.5 transition-colors hover:bg-[#e5f1f2]"
-                >
-                  <Bell className="w-5 h-5 text-slate-500" />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-[#F59E0B] rounded-full ring-2 ring-white"></span>
-                </button>
-
-                {/* Notification Dropdown */}
-                {notificationOpen && (
-                  <div className="absolute right-0 z-50 mt-2 max-h-96 w-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
-                    <div className="p-4 border-b border-[#D9E2EC]">
-                      <h3 className="text-sm font-semibold text-[#0F172A]">Deadline Reminders</h3>
-                    </div>
-                    <div className="py-2">
-                      <div className="px-4 py-3 hover:bg-[#F2F5F7] transition-colors border-l-4 border-[#F59E0B]">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 bg-[#FEF3C7] rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Bell className="w-4 h-4 text-[#F59E0B]" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-[#0F172A]">Monthly Report Due Soon</p>
-                            <p className="text-xs text-[#6B7280] mt-1">Submit your monthly visitor and accommodation reports by May 15, 2026</p>
-                            <p className="text-xs text-[#F59E0B] font-medium mt-1">Due in 4 days</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="px-4 py-3 hover:bg-[#F2F5F7] transition-colors border-l-4 border-[#3B82F6]">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 bg-[#DBEAFE] rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Bell className="w-4 h-4 text-[#3B82F6]" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-[#0F172A]">Quarterly Report Reminder</p>
-                            <p className="text-xs text-[#6B7280] mt-1">Q2 2026 quarterly report submission opens on May 20, 2026</p>
-                            <p className="text-xs text-[#6B7280] font-medium mt-1">9 days remaining</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="px-4 py-3 hover:bg-[#F2F5F7] transition-colors border-l-4 border-[#22C55E]">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 bg-[#D1FAE5] rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Bell className="w-4 h-4 text-[#22C55E]" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-[#0F172A]">Report Approved</p>
-                            <p className="text-xs text-[#6B7280] mt-1">Your April 2026 accommodation report has been approved</p>
-                            <p className="text-xs text-[#6B7280] font-medium mt-1">2 days ago</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-3 border-t border-[#D9E2EC]">
-                      <button className="w-full text-center text-sm font-medium text-[#1CA7C9] hover:text-[#0E5A72] transition-colors">
-                        View All Notifications
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <NotificationCenter role="establishment_staff" />
 
               <div className="h-8 w-px bg-slate-200"></div>
 
