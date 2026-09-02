@@ -161,8 +161,8 @@ export default function AIInsights() {
       </div>
 
       {/* Service Gaps / Operational Challenges */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-orange-600" />
             <h3 className="text-lg font-semibold text-gray-900">Service Gaps or Operational Challenges</h3>
@@ -171,12 +171,12 @@ export default function AIInsights() {
             {activeAnomalies.length} Active
           </span>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {activeAnomalies.length > 0 ? (
             visibleAnomalies.map((anomaly) => (
               <div
                 key={anomaly.id}
-                className={`border-l-4 rounded-lg p-4 ${
+                className={`border-l-4 rounded-lg p-3 sm:p-4 ${
                   anomaly.severity === 'high'
                     ? 'border-red-500 bg-red-50'
                     : anomaly.severity === 'medium'
@@ -184,15 +184,15 @@ export default function AIInsights() {
                     : 'border-blue-500 bg-blue-50'
                 }`}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3 flex-1">
-                    <AlertTriangle className={`w-5 h-5 mt-0.5 ${
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                    <AlertTriangle className={`w-4 h-4 mt-0.5 shrink-0 ${
                       anomaly.severity === 'high' ? 'text-red-600' : 
                       anomaly.severity === 'medium' ? 'text-yellow-600' : 'text-blue-600'
                     }`} />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold text-gray-900">{anomaly.anomaly_type}</h4>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                        <h4 className="font-semibold leading-snug text-gray-900">{anomaly.anomaly_type}</h4>
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                           anomaly.severity === 'high' ? 'bg-red-200 text-red-800' :
                           anomaly.severity === 'medium' ? 'bg-yellow-200 text-yellow-800' : 'bg-blue-200 text-blue-800'
@@ -203,16 +203,16 @@ export default function AIInsights() {
                       <p className="text-sm text-gray-700 font-medium mb-1">
                         {anomaly.establishments?.name || 'Unknown Establishment'}
                       </p>
-                      <p className="text-sm leading-6 text-gray-600 mb-2"><AiFormattedText text={anomaly.description} /></p>
+                      <p className="text-sm leading-5 text-gray-600 mb-2"><AiFormattedText text={anomaly.description} /></p>
                       {anomaly.recommendation && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Info className="w-4 h-4 text-gray-500" />
+                        <div className="flex items-start gap-2 text-sm leading-5">
+                          <Info className="w-4 h-4 mt-0.5 shrink-0 text-gray-500" />
                           <AiFormattedText text={anomaly.recommendation} className="text-gray-600" tone="action" />
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="shrink-0 text-right">
                     <p className="text-xs text-gray-500">
                       {new Date(anomaly.detected_at).toLocaleDateString()}
                     </p>
@@ -241,30 +241,30 @@ export default function AIInsights() {
       </div>
 
       {/* AI Recommendations */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
           <TrendingUp className="w-5 h-5 text-purple-600" />
           AI-Powered Recommendations
         </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {insights.length > 0 ? (
             visibleInsights.map((insight) => {
               const { summary, action } = splitAiRecommendation(insight.description, insight.recommended_action)
               const confidence = formatConfidence(insight.confidence_score)
 
               return (
-              <div key={insight.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-                <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-semibold text-gray-900">{cleanAiText(insight.title)}</h4>
+              <div key={insight.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <h4 className="font-semibold leading-snug text-gray-900">{cleanAiText(insight.title)}</h4>
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                     insight.impact === 'high' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
                   }`}>
                     {insight.impact} impact
                   </span>
                 </div>
-                <p className="text-sm leading-6 text-gray-600 mb-2"><AiFormattedText text={summary} /></p>
+                <p className="text-sm leading-5 text-gray-600 mb-2"><AiFormattedText text={summary} /></p>
                 {action && (
-                  <p className="text-sm text-gray-900 mb-3">
+                  <p className="text-sm leading-5 text-gray-900 mb-3">
                     <strong className="font-semibold">Action:</strong> <AiFormattedText text={action} tone="action" />
                   </p>
                 )}
