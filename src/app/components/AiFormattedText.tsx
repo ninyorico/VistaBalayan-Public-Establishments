@@ -69,7 +69,7 @@ export function AiFormattedText({ text, className = '', tone = 'body' }: AiForma
   }
 
   return (
-    <span className={className} data-ai-formatted-text="compact">
+    <span className={className} data-ai-formatted-text="compact-justified">
       {pieces.length > 0 ? pieces : cleaned}
     </span>
   )
