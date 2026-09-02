@@ -3,6 +3,7 @@ import { AlertTriangle, TrendingUp, CheckCircle, Info, Brain, Loader2, RefreshCw
 import { supabase } from '../../../lib/supabase'
 import { geminiService } from '../../../services/geminiService'
 import { cleanAiText, formatConfidence, splitAiRecommendation } from '../../../lib/aiText'
+import { AiFormattedText } from '../../components/AiFormattedText'
 
 const DEFAULT_AI_ITEMS_VISIBLE = 5
 
@@ -202,11 +203,11 @@ export default function AIInsights() {
                       <p className="text-sm text-gray-700 font-medium mb-1">
                         {anomaly.establishments?.name || 'Unknown Establishment'}
                       </p>
-                      <p className="text-sm text-gray-600 mb-2">{cleanAiText(anomaly.description)}</p>
+                      <p className="text-sm leading-6 text-gray-600 mb-2"><AiFormattedText text={anomaly.description} /></p>
                       {anomaly.recommendation && (
                         <div className="flex items-center gap-2 text-sm">
                           <Info className="w-4 h-4 text-gray-500" />
-                          <span className="text-gray-600">{cleanAiText(anomaly.recommendation)}</span>
+                          <AiFormattedText text={anomaly.recommendation} className="text-gray-600" tone="action" />
                         </div>
                       )}
                     </div>
@@ -261,10 +262,10 @@ export default function AIInsights() {
                     {insight.impact} impact
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{summary}</p>
+                <p className="text-sm leading-6 text-gray-600 mb-2"><AiFormattedText text={summary} /></p>
                 {action && (
-                  <p className="text-sm font-medium text-gray-900 mb-3">
-                    Action: {action}
+                  <p className="text-sm text-gray-900 mb-3">
+                    <strong className="font-semibold">Action:</strong> <AiFormattedText text={action} tone="action" />
                   </p>
                 )}
                 <div className="flex items-center justify-between gap-3">
