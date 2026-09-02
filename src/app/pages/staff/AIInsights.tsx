@@ -295,9 +295,9 @@ const loadCachedData = async (estId: string) => {
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-orange-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Service Gaps or Operational Challenges</h3>
+            <h3 className="text-base font-semibold leading-snug text-gray-900 sm:text-lg">Service Gaps or Operational Challenges</h3>
           </div>
-          <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">
+          <span className="shrink-0 rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium leading-tight text-yellow-700 sm:px-3 sm:text-sm">
             {anomalies.filter((a) => a.severity === "medium" || a.severity === "high").length} Active
           </span>
         </div>
@@ -306,7 +306,7 @@ const loadCachedData = async (estId: string) => {
             anomalies.map((anomaly) => (
               <div
                 key={anomaly.id}
-                className={`border-l-4 rounded-lg p-3 sm:p-4 ${
+                className={`border-l-4 rounded-lg p-3.5 sm:p-4 ${
                   anomaly.severity === "high"
                     ? "border-red-500 bg-red-50"
                     : anomaly.severity === "medium"
@@ -314,8 +314,8 @@ const loadCachedData = async (estId: string) => {
                     : "border-blue-500 bg-blue-50"
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                <div className="relative pr-16 sm:pr-20" data-ai-card-layout="aligned-mobile">
+                  <div className="flex min-w-0 items-start gap-2.5">
                     <AlertTriangle
                       className={`w-4 h-4 mt-0.5 shrink-0 ${
                         anomaly.severity === "high"
@@ -325,9 +325,9 @@ const loadCachedData = async (estId: string) => {
                           : "text-blue-600"
                       }`}
                     />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                        <h4 className="font-semibold text-gray-900">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                        <h4 className="text-base font-semibold leading-snug text-gray-900">
                           {anomaly.anomaly_type}
                         </h4>
                         <span
@@ -342,18 +342,17 @@ const loadCachedData = async (estId: string) => {
                           {anomaly.severity}
                         </span>
                       </div>
-                      <p className="text-sm leading-5 text-gray-700 mb-2">
+                      <p className="mb-2 text-sm leading-5 text-gray-700">
                         <AiFormattedText text={anomaly.description} />
                       </p>
                       {anomaly.recommendation && (
-                        <div className="flex items-start gap-2 text-sm leading-5">
-                          <Info className="w-4 h-4 mt-0.5 shrink-0 text-gray-500" />
-                          <AiFormattedText text={anomaly.recommendation} className="text-gray-600" tone="action" />
+                        <div className="mt-2 rounded-md border border-black/5 bg-white/45 px-3 py-2 text-sm leading-5 text-gray-700" data-ai-action-note="aligned">
+                          <span className="font-semibold text-gray-800">Recommendation:</span> <AiFormattedText text={anomaly.recommendation} tone="action" />
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className="shrink-0 text-right">
+                  <div className="absolute right-0 top-0 text-right">
                     <p className="text-xs text-gray-500">
                       {new Date(anomaly.detected_at).toLocaleDateString()}
                     </p>
@@ -389,10 +388,10 @@ const loadCachedData = async (estId: string) => {
               return (
               <div
                 key={insight.id}
-                className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition"
+                className="border border-gray-200 rounded-lg p-3.5 sm:p-4 hover:shadow-md transition" data-ai-card-layout="aligned-mobile"
               >
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <h4 className="font-semibold leading-snug text-gray-900">{cleanAiText(insight.title)}</h4>
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <h4 className="min-w-0 flex-1 text-base font-semibold leading-snug text-gray-900">{cleanAiText(insight.title)}</h4>
                   <span
                     className={`px-2 py-0.5 rounded text-xs font-medium ${
                       insight.impact === "high"
@@ -403,9 +402,9 @@ const loadCachedData = async (estId: string) => {
                     {insight.impact} impact
                   </span>
                 </div>
-                <p className="text-sm leading-5 text-gray-600 mb-2"><AiFormattedText text={summary} /></p>
+                <p className="mb-2 text-sm leading-5 text-gray-600"><AiFormattedText text={summary} /></p>
                 {action && (
-                  <p className="text-sm leading-5 text-gray-900 mb-3">
+                  <p className="mb-3 rounded-md bg-slate-50 px-3 py-2 text-sm leading-5 text-gray-800" data-ai-action-note="aligned">
                     <strong className="font-semibold">Action:</strong> <AiFormattedText text={action} tone="action" />
                   </p>
                 )}
