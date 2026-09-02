@@ -282,36 +282,36 @@ export default function Analytics() {
         <p className="text-gray-600 mt-1">Data-driven tourism analytics and decision support for {getCurrentYearRange().year}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Peak Season</p>
-            <TrendingUp className="w-5 h-5 text-green-600" />
+      <div className="grid grid-cols-3 gap-2 sm:gap-4" data-analytics-kpi-row="mobile-one-row">
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 shadow-sm sm:p-5">
+          <div className="mb-1.5 flex items-center justify-between gap-1">
+            <p className="text-[10px] font-medium leading-tight text-gray-600 sm:text-sm">Peak Season</p>
+            <TrendingUp className="h-3.5 w-3.5 shrink-0 text-green-600 sm:h-5 sm:w-5" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">{data.peakSeason.month || "N/A"}</p>
-          <p className="text-sm text-green-600 mt-1">
-            {data.peakSeason.visitors.toLocaleString()} visitors ({data.peakSeason.growth.toFixed(1)}% vs previous month)
+          <p className="truncate text-base font-bold leading-tight text-gray-900 sm:text-2xl">{data.peakSeason.month || "N/A"}</p>
+          <p className="mt-1 truncate text-[10px] leading-tight text-green-600 sm:text-sm">
+            {data.peakSeason.visitors.toLocaleString()} visitors
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Top Origin</p>
-            <MapPin className="w-5 h-5 text-purple-600" />
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 shadow-sm sm:p-5">
+          <div className="mb-1.5 flex items-center justify-between gap-1">
+            <p className="text-[10px] font-medium leading-tight text-gray-600 sm:text-sm">Top Origin</p>
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-purple-600 sm:h-5 sm:w-5" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">{data.topOrigin.location || "N/A"}</p>
-          <p className="text-sm text-purple-600 mt-1">{data.topOrigin.percentage}% of visitors</p>
+          <p className="truncate text-base font-bold leading-tight text-gray-900 sm:text-2xl">{data.topOrigin.location || "N/A"}</p>
+          <p className="mt-1 truncate text-[10px] leading-tight text-purple-600 sm:text-sm">{data.topOrigin.percentage}% visitors</p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Latest Monthly Growth</p>
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 shadow-sm sm:p-5">
+          <div className="mb-1.5 flex items-center justify-between gap-1">
+            <p className="text-[10px] font-medium leading-tight text-gray-600 sm:text-sm">Latest Growth</p>
             {data.growthRate >= 0 ? (
-              <TrendingUp className="w-5 h-5 text-green-600" />
+              <TrendingUp className="h-3.5 w-3.5 shrink-0 text-green-600 sm:h-5 sm:w-5" />
             ) : (
-              <TrendingDown className="w-5 h-5 text-red-600" />
+              <TrendingDown className="h-3.5 w-3.5 shrink-0 text-red-600 sm:h-5 sm:w-5" />
             )}
           </div>
-          <p className="text-2xl font-bold text-gray-900">{data.growthRate.toFixed(1)}%</p>
-          <p className="text-sm text-orange-600 mt-1">Month over month</p>
+          <p className="truncate text-base font-bold leading-tight text-gray-900 sm:text-2xl">{data.growthRate.toFixed(1)}%</p>
+          <p className="mt-1 truncate text-[10px] leading-tight text-orange-600 sm:text-sm">Month over month</p>
         </div>
       </div>
 
