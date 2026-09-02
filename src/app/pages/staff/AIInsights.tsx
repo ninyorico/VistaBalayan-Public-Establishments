@@ -314,8 +314,9 @@ const loadCachedData = async (estId: string) => {
                     : "border-blue-500 bg-blue-50"
                 }`}
               >
-                <div className="relative pr-16 sm:pr-20" data-ai-card-layout="aligned-mobile">
-                  <div className="flex min-w-0 items-start gap-2.5">
+                <div className="space-y-2" data-ai-card-layout="full-width-mobile">
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-2.5">
                     <AlertTriangle
                       className={`w-4 h-4 mt-0.5 shrink-0 ${
                         anomaly.severity === "high"
@@ -325,8 +326,8 @@ const loadCachedData = async (estId: string) => {
                           : "text-blue-600"
                       }`}
                     />
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex flex-wrap items-center gap-1.5">
                         <h4 className="text-base font-semibold leading-snug text-gray-900">
                           {anomaly.anomaly_type}
                         </h4>
@@ -342,20 +343,21 @@ const loadCachedData = async (estId: string) => {
                           {anomaly.severity}
                         </span>
                       </div>
-                      <p className="mb-2 text-sm leading-5 text-gray-700">
-                        <AiFormattedText text={anomaly.description} />
-                      </p>
-                      {anomaly.recommendation && (
-                        <div className="mt-2 rounded-md border border-black/5 bg-white/45 px-3 py-2 text-sm leading-5 text-gray-700" data-ai-action-note="aligned">
-                          <span className="font-semibold text-gray-800">Recommendation:</span> <AiFormattedText text={anomaly.recommendation} tone="action" />
-                        </div>
-                      )}
                     </div>
-                  </div>
-                  <div className="absolute right-0 top-0 text-right">
-                    <p className="text-xs text-gray-500">
+                    </div>
+                    <p className="shrink-0 whitespace-nowrap text-xs text-gray-500">
                       {new Date(anomaly.detected_at).toLocaleDateString()}
                     </p>
+                  </div>
+                  <div className="pl-6 sm:pl-6">
+                    <p className="mb-2 text-sm leading-5 text-gray-700">
+                      <AiFormattedText text={anomaly.description} />
+                    </p>
+                    {anomaly.recommendation && (
+                      <div className="mt-2 rounded-md bg-white/70 px-3 py-2 text-sm leading-5 text-gray-700 ring-1 ring-black/5" data-ai-action-note="full-width">
+                        <span className="font-semibold text-gray-800">Recommendation:</span> <AiFormattedText text={anomaly.recommendation} tone="action" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
