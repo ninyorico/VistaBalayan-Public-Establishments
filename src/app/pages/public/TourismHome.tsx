@@ -26,6 +26,7 @@ import { Badge } from '../../components/ui/badge'
 import { Input } from '../../components/ui/input'
 import { Separator } from '../../components/ui/separator'
 import { supabase } from '../../../lib/supabase'
+import { generatePublicRecommendationExplanations } from '../../../services/publicRecommendationService'
 
 interface Establishment {
   id: string
@@ -410,6 +411,8 @@ export default function TourismHome() {
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'ready' | 'blocked'>('idle')
   const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [showSelectedMap, setShowSelectedMap] = useState(false)
+  const [aiRecommendationReasons, setAiRecommendationReasons] = useState<Record<string, string>>({})
+  const [aiRecommendationStatus, setAiRecommendationStatus] = useState<'idle' | 'loading' | 'ready' | 'fallback'>('idle')
 
   useEffect(() => {
     let cancelled = false
@@ -707,7 +710,7 @@ export default function TourismHome() {
     )
   }
 
-  const recommendations = useMemo(() => {
+  const baseRecommendations = useMemo(() => {
     return establishments
       .map((est) => {
         const publicCategory = getPublicCategory(est.type) || 'Resort'
@@ -721,16 +724,81 @@ export default function TourismHome() {
           : 0
         const featuredBoost = est.featured ? 8 : 0
         const roomBoost = est.total_rooms ? Math.min(est.total_rooms / 8, 8) : 0
+        const rating = ratingSummaries[est.id]
+        const ratingBoost = rating?.average ? rating.average * 2 : 0
         const distanceScore = distance === null ? 0 : 100 - distance * 18
-        const score = distanceScore + categoryBoost * 7 + viewedBoost + searchBoost + featuredBoost + roomBoost
+        const score = distanceScore + categoryBoost * 7 + viewedBoost + searchBoost + featuredBoost + roomBoost + ratingBoost
         const reason = userLocation && distance !== null
           ? `${distance.toFixed(1)} km from your location, with a match to your browsing pattern.`
           : 'Recommended from your browsing pattern and Balayan travel interests.'
-        return { ...est, publicCategory, distance, score, reason }
+        return {
+          ...est,
+          publicCategory,
+          distance,
+          score,
+          reason,
+          searchMatched: searchBoost > 0,
+          categoryInterest: categoryBoost > 0,
+          previouslyViewed: viewedBoost > 0,
+        }
       })
       .sort((a, b) => b.score - a.score)
       .slice(0, 3)
-  }, [establishments, behavior, userLocation, routeDistances])
+  }, [establishments, behavior, userLocation, routeDistances, ratingSummaries])
+
+  useEffect(() => {
+    if (baseRecommendations.length === 0) {
+      setAiRecommendationReasons({})
+      setAiRecommendationStatus('idle')
+      return
+    }
+
+    let cancelled = false
+    setAiRecommendationStatus('loading')
+
+    const handle = window.setTimeout(() => {
+      generatePublicRecommendationExplanations(
+        baseRecommendations.map((est) => ({
+          id: est.id,
+          name: est.name,
+          category: est.publicCategory,
+          address: est.address,
+          description: est.description,
+          distance: est.distance,
+          rating: ratingSummaries[est.id]?.average || null,
+          ratingCount: ratingSummaries[est.id]?.count || null,
+          searchMatched: est.searchMatched,
+          categoryInterest: est.categoryInterest,
+          previouslyViewed: est.previouslyViewed,
+          featured: est.featured,
+          fallbackReason: est.reason,
+        })),
+        {
+          searchTerm: searchTerm.trim(),
+          selectedCategory: selectedType,
+          hasUserLocation: Boolean(userLocation),
+          recentSearches: behavior.searches.slice(0, 5),
+        },
+      ).then((reasons) => {
+        if (cancelled) return
+        setAiRecommendationReasons(reasons)
+        setAiRecommendationStatus(Object.keys(reasons).length > 0 ? 'ready' : 'fallback')
+      })
+    }, 500)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(handle)
+    }
+  }, [baseRecommendations, behavior.searches, ratingSummaries, searchTerm, selectedType, userLocation])
+
+  const recommendations = useMemo(() => {
+    return baseRecommendations.map((est) => ({
+      ...est,
+      reason: aiRecommendationReasons[est.id] || est.reason,
+      aiReasonReady: Boolean(aiRecommendationReasons[est.id]),
+    }))
+  }, [baseRecommendations, aiRecommendationReasons])
 
   const nearestStays = useMemo(() => {
     if (!userLocation) {
@@ -830,8 +898,15 @@ export default function TourismHome() {
             <CardContent className="p-5 sm:p-6">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium text-white/66">Personalized picks</p>
+                  <p className="text-sm font-medium text-white/66">AI-assisted personalized picks</p>
                   <h2 className="mt-1 text-2xl font-semibold tracking-[-0.025em]">Where to stay next</h2>
+                  <p className="mt-1 text-xs leading-5 text-white/58">
+                    {aiRecommendationStatus === 'loading'
+                      ? 'Gemini is preparing concise reasons from your search and travel signals.'
+                      : aiRecommendationStatus === 'ready'
+                        ? 'Explanations are generated with Gemini using listing and visitor-context signals.'
+                        : 'Uses listing, distance, search, and browsing signals with fallback explanations.'}
+                  </p>
                 </div>
                 <Button
                   type="button"
@@ -855,7 +930,14 @@ export default function TourismHome() {
                         {React.createElement(getCategoryIcon(est.type), { className: 'h-5 w-5', strokeWidth: 1.8 })}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold text-white">{est.name}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate font-semibold text-white">{est.name}</p>
+                          {est.aiReasonReady && (
+                            <span className="rounded-full bg-cyan-200/18 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-50">
+                              Gemini
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-1 text-sm leading-5 text-white/68">{est.reason}</p>
                       </div>
                     </div>
