@@ -900,12 +900,12 @@ export default function TourismHome() {
                 <div>
                   <p className="text-sm font-medium text-white/66">AI-assisted personalized picks</p>
                   <h2 className="mt-1 text-2xl font-semibold tracking-[-0.025em]">Where to stay next</h2>
-                  <p className="mt-1 text-xs leading-5 text-white/58">
+                  <p className="mt-1 text-xs leading-5 text-white/58" data-public-gemini-recommendations="server-assisted-explanations">
                     {aiRecommendationStatus === 'loading'
                       ? 'Gemini is preparing concise reasons from your search and travel signals.'
                       : aiRecommendationStatus === 'ready'
-                        ? 'Explanations are generated with Gemini using listing and visitor-context signals.'
-                        : 'Uses listing, distance, search, and browsing signals with fallback explanations.'}
+                        ? 'AI-assisted explanations are generated with Gemini using listing and visitor-context signals.'
+                        : 'Uses listing, distance, search, and browsing signals with fallback explanations if Gemini is unavailable.'}
                   </p>
                 </div>
                 <Button
