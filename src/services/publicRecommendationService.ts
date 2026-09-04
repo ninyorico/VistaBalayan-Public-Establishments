@@ -1,3 +1,9 @@
+import { GoogleGenerativeAI } from '@google/generative-ai'
+
+const MODEL_NAME = 'models/gemini-2.5-flash'
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || ''
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null
+
 export interface PublicRecommendationCandidate {
   id: string
   name: string
@@ -21,14 +27,6 @@ export interface PublicRecommendationContext {
   recentSearches: string[]
 }
 
-interface GeminiRecommendationResponse {
-  recommendations?: Array<{ id?: string; reason?: string }>
-  source?: 'gemini' | 'fallback'
-  model?: string
-}
-
-const PUBLIC_RECOMMENDATION_ENDPOINT = '/api/public-recommendations'
-
 const cleanReason = (value: unknown, fallback: string) => {
   const cleaned = String(value || '')
     .replace(/[*_`#>\[\]{}]/g, '')
@@ -40,28 +38,64 @@ const cleanReason = (value: unknown, fallback: string) => {
   return `${cleaned.slice(0, 177).trim()}...`
 }
 
+const extractJsonObject = (text: string) => {
+  const match = text.match(/\{[\s\S]*\}/)
+  if (!match) return null
+  return JSON.parse(match[0]) as { recommendations?: Array<{ id?: string; reason?: string }> }
+}
+
 export async function generatePublicRecommendationExplanations(
   candidates: PublicRecommendationCandidate[],
   context: PublicRecommendationContext,
 ): Promise<Record<string, string>> {
-  if (candidates.length === 0) return {}
+  if (!genAI || candidates.length === 0) return {}
+
+  const compactCandidates = candidates.slice(0, 3).map((candidate) => ({
+    id: candidate.id,
+    name: candidate.name,
+    category: candidate.category,
+    address: candidate.address || '',
+    description: candidate.description || '',
+    distanceKm: typeof candidate.distance === 'number' ? Number(candidate.distance.toFixed(1)) : null,
+    rating: candidate.rating,
+    ratingCount: candidate.ratingCount,
+    signals: {
+      searchMatched: candidate.searchMatched,
+      categoryInterest: candidate.categoryInterest,
+      previouslyViewed: candidate.previouslyViewed,
+      featured: candidate.featured,
+    },
+  }))
+
+  const prompt = `
+You are VistaBalayan's public tourism recommendation assistant for Balayan, Batangas.
+Write short visitor-friendly AI-assisted explanations for why each resort or hotel is recommended.
+Use only the provided data. Do not invent amenities, prices, availability, or booking details.
+Mention location/distance only when distanceKm is not null.
+Keep each reason one sentence, 12 to 24 words, warm and specific.
+
+Visitor context:
+${JSON.stringify(context, null, 2)}
+
+Candidates:
+${JSON.stringify(compactCandidates, null, 2)}
+
+Return ONLY valid JSON in this exact shape:
+{
+  "recommendations": [
+    { "id": "candidate id", "reason": "one concise explanation" }
+  ]
+}
+`
 
   try {
-    const response = await fetch(PUBLIC_RECOMMENDATION_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        candidates: candidates.slice(0, 3),
-        context,
-      }),
-    })
-
-    if (!response.ok) return {}
-
-    const payload = (await response.json()) as GeminiRecommendationResponse
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME })
+    const result = await model.generateContent(prompt)
+    const responseText = await result.response.text()
+    const parsed = extractJsonObject(responseText)
     const explanations: Record<string, string> = {}
 
-    for (const item of payload.recommendations || []) {
+    for (const item of parsed?.recommendations || []) {
       const candidate = candidates.find((entry) => entry.id === item.id)
       if (!candidate || !item.id) continue
       explanations[item.id] = cleanReason(item.reason, candidate.fallbackReason)
