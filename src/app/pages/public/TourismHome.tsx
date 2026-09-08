@@ -1182,7 +1182,6 @@ export default function TourismHome() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <h3 className="font-semibold leading-6 text-slate-950">Rate this establishment</h3>
-                    <p className="mt-1 text-sm leading-5 text-slate-600">No account needed. Enter your name so visitors can see who shared the review.</p>
                   </div>
                   <div className="grid shrink-0 grid-cols-5 gap-0.5" aria-label="Choose a rating from 1 to 5 stars">
                     {[1, 2, 3, 4, 5].map((rating) => (
