@@ -790,8 +790,8 @@ export default function TourismHome() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#f5faf8] text-[#332F3A]">
-      <section className="relative overflow-hidden border-b border-[#DDD6FE] bg-[#332F3A] text-white">
+    <main className="min-h-[100dvh] bg-[#f5faf8] text-[#0B2530]">
+      <section className="relative overflow-hidden border-b border-[#d7e5e2] bg-[#0B2530] text-white">
         {featuredImage && (
           <img
             src={featuredImage}
@@ -851,7 +851,7 @@ export default function TourismHome() {
                     className="w-full rounded-2xl border border-white/12 bg-white/10 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white/16 active:translate-y-[1px]"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#7C3AED]">
+                      <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#0E5A72]">
                         {React.createElement(getCategoryIcon(est.type), { className: 'h-5 w-5', strokeWidth: 1.8 })}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -868,7 +868,7 @@ export default function TourismHome() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-8 sm:px-6 lg:px-8">
-        <Card className="rounded-[1.75rem] border-[#DDD6FE] bg-white/92 shadow-[0_24px_80px_rgba(14,90,114,0.10)] backdrop-blur-xl">
+        <Card className="rounded-[1.75rem] border-[#d7e5e2] bg-white/92 shadow-[0_24px_80px_rgba(14,90,114,0.10)] backdrop-blur-xl">
           <CardContent className="flex flex-col gap-5 p-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-2">
               {categories.map((cat) => {
@@ -881,8 +881,8 @@ export default function TourismHome() {
                     variant={selectedType === cat.id ? 'default' : 'secondary'}
                     className={`rounded-2xl px-4 py-2.5 text-sm font-semibold shadow-none active:translate-y-[1px] ${
                       selectedType === cat.id
-                        ? 'bg-[#7C3AED] text-white hover:bg-[#073B4C]'
-                        : 'bg-[#EDE9FE] text-[#332F3A] hover:bg-[#DDD6FE]'
+                        ? 'bg-[#0E5A72] text-white hover:bg-[#073B4C]'
+                        : 'bg-[#e5f1f2] text-[#0B2530] hover:bg-[#d7e5e2]'
                     }`}
                   >
                     <Icon className="h-4 w-4" strokeWidth={1.8} />
@@ -902,16 +902,16 @@ export default function TourismHome() {
       <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-5 pb-16 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
         <div>
           {loading ? (
-            <Card className="rounded-[2rem] border-[#DDD6FE] bg-white/90 py-14 shadow-[0_24px_80px_rgba(14,90,114,0.08)]">
+            <Card className="rounded-[2rem] border-[#d7e5e2] bg-white/90 py-14 shadow-[0_24px_80px_rgba(14,90,114,0.08)]">
               <CardContent className="flex flex-col items-center justify-center gap-4 p-6">
-                <div className="h-12 w-44 animate-pulse rounded-full bg-[#EDE9FE]" />
+                <div className="h-12 w-44 animate-pulse rounded-full bg-[#e5f1f2]" />
                 <div className="grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
                   {[1, 2, 3].map((item) => <div key={item} className="h-32 animate-pulse rounded-3xl bg-[#f0f7f5]" />)}
                 </div>
               </CardContent>
             </Card>
           ) : filtered.length === 0 ? (
-            <Card className="rounded-[2rem] border-[#DDD6FE] bg-white/90 p-12 text-center shadow-[0_24px_80px_rgba(14,90,114,0.08)]">
+            <Card className="rounded-[2rem] border-[#d7e5e2] bg-white/90 p-12 text-center shadow-[0_24px_80px_rgba(14,90,114,0.08)]">
               <p className="text-slate-500">No resorts or hotels found. Try a different search.</p>
             </Card>
           ) : (
@@ -923,7 +923,7 @@ export default function TourismHome() {
                 return (
                   <Card
                     key={est.id}
-                    className="group overflow-hidden rounded-[1.7rem] border-[#DDD6FE] bg-white/95 py-0 shadow-[0_22px_70px_rgba(14,90,114,0.10)] backdrop-blur-xl transition duration-200 hover:-translate-y-1 hover:shadow-[0_32px_90px_rgba(14,90,114,0.16)]"
+                    className="group overflow-hidden rounded-[1.7rem] border-[#d7e5e2] bg-white/95 py-0 shadow-[0_22px_70px_rgba(14,90,114,0.10)] backdrop-blur-xl transition duration-200 hover:-translate-y-1 hover:shadow-[0_32px_90px_rgba(14,90,114,0.16)]"
                   >
                     <button onClick={() => openDetails(est)} className="w-full text-left active:translate-y-[1px]">
                       {displayImage ? (
@@ -936,14 +936,14 @@ export default function TourismHome() {
                           )}
                         </div>
                       ) : (
-                        <div className="flex h-56 items-center justify-center bg-gradient-to-br from-[#7C3AED] via-[#168AAD] to-[#83c5be]">
+                        <div className="flex h-56 items-center justify-center bg-gradient-to-br from-[#0E5A72] via-[#168AAD] to-[#83c5be]">
                           <Icon className="h-14 w-14 text-white/70" strokeWidth={1.8} />
                         </div>
                       )}
                       <CardContent className="p-5">
                         <div className="mb-3 flex items-start justify-between gap-3">
                           <h3 className="text-lg font-semibold leading-6 tracking-[-0.02em] text-slate-950">{est.name}</h3>
-                          <Badge className="shrink-0 rounded-full bg-[#EDE9FE] px-3 py-1 text-xs font-semibold text-[#7C3AED] shadow-none hover:bg-[#EDE9FE]">
+                          <Badge className="shrink-0 rounded-full bg-[#e5f1f2] px-3 py-1 text-xs font-semibold text-[#0E5A72] shadow-none hover:bg-[#e5f1f2]">
                             {publicCategory}
                           </Badge>
                         </div>
@@ -953,7 +953,7 @@ export default function TourismHome() {
                           <span>{est.address}</span>
                         </div>
                         {est.description && <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">{est.description}</p>}
-                        <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#7C3AED]">
+                        <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#0E5A72]">
                           View details <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" strokeWidth={1.8} />
                         </span>
                       </CardContent>
@@ -965,7 +965,7 @@ export default function TourismHome() {
           )}
         </div>
 
-        <Card className="h-fit rounded-[2rem] border-[#DDD6FE] bg-white/92 shadow-[0_24px_80px_rgba(14,90,114,0.10)] backdrop-blur-xl lg:sticky lg:top-6">
+        <Card className="h-fit rounded-[2rem] border-[#d7e5e2] bg-white/92 shadow-[0_24px_80px_rgba(14,90,114,0.10)] backdrop-blur-xl lg:sticky lg:top-6">
           <CardContent className="p-5">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
@@ -983,14 +983,14 @@ export default function TourismHome() {
                           : 'Tap Improve with my location for distance-based results.'}
                 </p>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#EDE9FE] text-[#7C3AED]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#e5f1f2] text-[#0E5A72]">
                 <Navigation className="h-5 w-5" strokeWidth={1.8} />
               </div>
             </div>
             <div className="space-y-3">
               {userLocation && routeStatus === 'loading' && (
-                <div className="flex items-center gap-3 rounded-2xl border border-[#DDD6FE]/70 bg-[#FAF7FF] p-4 text-sm font-medium text-slate-600">
-                  <Loader2 className="h-4 w-4 animate-spin text-[#7C3AED]" strokeWidth={1.8} />
+                <div className="flex items-center gap-3 rounded-2xl border border-[#d7e5e2]/70 bg-[#f8fbf8] p-4 text-sm font-medium text-slate-600">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#0E5A72]" strokeWidth={1.8} />
                   Calculating road distances...
                 </div>
               )}
@@ -1000,18 +1000,18 @@ export default function TourismHome() {
                 </div>
               )}
               {userLocation && routeStatus === 'ready' && nearestStays.length === 0 && (
-                <div className="rounded-2xl border border-[#DDD6FE]/70 bg-[#FAF7FF] p-4 text-xs leading-5 text-slate-600">
+                <div className="rounded-2xl border border-[#d7e5e2]/70 bg-[#f8fbf8] p-4 text-xs leading-5 text-slate-600">
                   GPS is on, but road distances are not available for these pins right now. You can still open directions from any listing.
                 </div>
               )}
               {nearestStays.map((est) => (
-                <button key={est.id} onClick={() => openDetails(est)} className="w-full rounded-2xl border border-[#DDD6FE]/70 bg-[#FAF7FF] p-4 text-left transition hover:bg-[#EDE9FE] active:translate-y-[1px]">
+                <button key={est.id} onClick={() => openDetails(est)} className="w-full rounded-2xl border border-[#d7e5e2]/70 bg-[#f8fbf8] p-4 text-left transition hover:bg-[#e5f1f2] active:translate-y-[1px]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold leading-5 text-slate-950">{est.name}</p>
                       <p className="mt-1 text-sm text-slate-500">{getPublicCategory(est.type)}</p>
                     </div>
-                    <Badge variant="outline" className="rounded-full border-[#DDD6FE] bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-sm">
+                    <Badge variant="outline" className="rounded-full border-[#d7e5e2] bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-sm">
                       {est.distance === null ? 'Use GPS' : `${est.distance.toFixed(1)} km route`}
                     </Badge>
                   </div>
@@ -1024,7 +1024,7 @@ export default function TourismHome() {
                   onClick={requestLocation}
                   disabled={locationStatus === 'loading'}
                   variant="outline"
-                  className="mt-5 w-full rounded-2xl border-slate-200 py-3 text-sm font-semibold text-slate-700 shadow-none hover:bg-[#FAF7FF] disabled:cursor-wait disabled:opacity-80"
+                  className="mt-5 w-full rounded-2xl border-slate-200 py-3 text-sm font-semibold text-slate-700 shadow-none hover:bg-[#f8fbf8] disabled:cursor-wait disabled:opacity-80"
                 >
                   {locationStatus === 'loading' && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />}
                   {locationStatus === 'loading' ? 'Getting phone location...' : routeStatus === 'error' ? 'Retry GPS distance' : 'Improve with my location'}
@@ -1097,25 +1097,25 @@ export default function TourismHome() {
                 )}
               </div>
             ) : (
-              <div className="flex h-56 items-center justify-center bg-gradient-to-br from-[#7C3AED] via-[#168AAD] to-[#D96C4E]">
+              <div className="flex h-56 items-center justify-center bg-gradient-to-br from-[#0E5A72] via-[#168AAD] to-[#D96C4E]">
                 {React.createElement(getCategoryIcon(selectedEstablishment.type), { className: 'h-14 w-14 text-white/70', strokeWidth: 1.8 })}
               </div>
             )}
             <div className="p-6 sm:p-8">
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <Badge className="mb-3 rounded-full bg-[#EDE9FE] px-3 py-1 text-xs font-semibold text-[#7C3AED] shadow-none hover:bg-[#EDE9FE]">
+                  <Badge className="mb-3 rounded-full bg-[#e5f1f2] px-3 py-1 text-xs font-semibold text-[#0E5A72] shadow-none hover:bg-[#e5f1f2]">
                     {getPublicCategory(selectedEstablishment.type)}
                   </Badge>
                   <h2 className="text-3xl font-semibold tracking-[-0.035em] text-slate-950">{selectedEstablishment.name}</h2>
                 </div>
-                <div className="rounded-full bg-[#FAF7FF] px-3 py-2">
+                <div className="rounded-full bg-[#f8fbf8] px-3 py-2">
                   <RatingDisplay summary={selectedRating} />
                 </div>
               </div>
 
               {selectedEstablishment.description && (
-                <div className="mb-5 rounded-2xl bg-[#FAF7FF] p-5">
+                <div className="mb-5 rounded-2xl bg-[#f8fbf8] p-5">
                   <h3 className="font-semibold text-slate-950">Establishment overview</h3>
                   <p className="mt-2 leading-7 text-slate-600">{selectedEstablishment.description}</p>
                 </div>
@@ -1127,14 +1127,14 @@ export default function TourismHome() {
                 {selectedEstablishment.email && <InfoRow icon={Mail} text={selectedEstablishment.email} />}
                 {selectedEstablishment.opening_hours && <InfoRow icon={Clock} text={selectedEstablishment.opening_hours} />}
                 {selectedEstablishment.website_url && (
-                  <a href={selectedEstablishment.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-2xl bg-[#FAF7FF] p-3 font-medium text-[#7C3AED] hover:bg-cyan-50">
+                  <a href={selectedEstablishment.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-2xl bg-[#f8fbf8] p-3 font-medium text-[#0E5A72] hover:bg-cyan-50">
                     <Globe className="h-4 w-4" strokeWidth={1.8} />
                     Visit website
                   </a>
                 )}
               </div>
 
-              <div className="mt-5 overflow-hidden rounded-2xl border border-[#DDD6FE] bg-[#FAF7FF]">
+              <div className="mt-5 overflow-hidden rounded-2xl border border-[#d7e5e2] bg-[#f8fbf8]">
                 <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="font-semibold text-slate-950">Location & Directions</h3>
@@ -1148,7 +1148,7 @@ export default function TourismHome() {
                     <Button
                       type="button"
                       onClick={() => openDirectionsToEstablishment(selectedEstablishment)}
-                      className="rounded-2xl bg-[#7C3AED] px-4 py-2.5 text-sm font-semibold text-white shadow-none hover:bg-[#073B4C]"
+                      className="rounded-2xl bg-[#0E5A72] px-4 py-2.5 text-sm font-semibold text-white shadow-none hover:bg-[#073B4C]"
                     >
                       <Navigation className="h-4 w-4" strokeWidth={1.8} />
                       Get Directions
@@ -1158,7 +1158,7 @@ export default function TourismHome() {
                       onClick={() => setShowSelectedMap(true)}
                       variant="outline"
                       disabled={!hasExactLocation(selectedEstablishment)}
-                      className="rounded-2xl border-[#DDD6FE] bg-white px-4 py-2.5 text-sm font-semibold text-[#7C3AED] shadow-none hover:bg-[#edf7f6] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-2xl border-[#d7e5e2] bg-white px-4 py-2.5 text-sm font-semibold text-[#0E5A72] shadow-none hover:bg-[#edf7f6] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <MapPin className="h-4 w-4" strokeWidth={1.8} />
                       {hasExactLocation(selectedEstablishment) ? 'View map' : 'No exact pin'}
@@ -1176,7 +1176,7 @@ export default function TourismHome() {
                 )}
               </div>
 
-              <Separator className="my-6 bg-[#DDD6FE]" />
+              <Separator className="my-6 bg-[#d7e5e2]" />
 
               <div className="rounded-2xl border border-cyan-100 bg-cyan-50/70 p-5">
                 <div className="flex items-start justify-between gap-3">
@@ -1190,11 +1190,11 @@ export default function TourismHome() {
                         type="button"
                         onClick={() => setSelectedReviewRating(rating)}
                         disabled={submittingRating}
-                        className="rounded-full p-1 text-[#7C3AED] transition hover:scale-110 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 sm:p-1.5"
+                        className="rounded-full p-1 text-[#0E5A72] transition hover:scale-110 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 sm:p-1.5"
                         aria-label={`Rate ${rating} star${rating === 1 ? '' : 's'}`}
                       >
                         <Star
-                          className={`h-5 w-5 sm:h-7 sm:w-7 ${rating <= (selectedReviewRating || selectedRating.visitorRating || 0) ? 'fill-[#7C3AED]' : 'fill-white'}`}
+                          className={`h-5 w-5 sm:h-7 sm:w-7 ${rating <= (selectedReviewRating || selectedRating.visitorRating || 0) ? 'fill-[#0E5A72]' : 'fill-white'}`}
                           strokeWidth={1.8}
                         />
                       </button>
@@ -1223,13 +1223,13 @@ export default function TourismHome() {
                       type="button"
                       onClick={submitRating}
                       disabled={submittingRating || selectedReviewRating < 1 || !reviewerName.trim()}
-                      className="rounded-2xl bg-[#7C3AED] px-5 py-2.5 text-sm font-semibold text-white shadow-none transition hover:bg-[#073B4C] disabled:cursor-not-allowed disabled:opacity-55"
+                      className="rounded-2xl bg-[#0E5A72] px-5 py-2.5 text-sm font-semibold text-white shadow-none transition hover:bg-[#073B4C] disabled:cursor-not-allowed disabled:opacity-55"
                     >
                       {submittingRating ? 'Saving...' : 'Submit rating'}
                     </Button>
                   </div>
                 </div>
-                {ratingMessage && <p className="mt-3 text-sm font-medium text-[#7C3AED]">{ratingMessage}</p>}
+                {ratingMessage && <p className="mt-3 text-sm font-medium text-[#0E5A72]">{ratingMessage}</p>}
               </div>
 
               <ReviewSummary summary={selectedRating} reviews={selectedReviews} />
@@ -1237,7 +1237,7 @@ export default function TourismHome() {
 
               <Button
                 onClick={() => setSelectedEstablishment(null)}
-                className="mt-6 w-full rounded-2xl bg-[#7C3AED] py-3.5 font-semibold text-white shadow-none transition hover:bg-[#073B4C] active:translate-y-[1px]"
+                className="mt-6 w-full rounded-2xl bg-[#0E5A72] py-3.5 font-semibold text-white shadow-none transition hover:bg-[#073B4C] active:translate-y-[1px]"
               >
                 Close
               </Button>
@@ -1270,12 +1270,12 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
             <button
               type="button"
               onClick={() => setSelectedRating(0)}
-              className="whitespace-nowrap rounded-full bg-[#EDE9FE] px-3 py-1.5 text-xs font-semibold text-[#7C3AED] transition hover:bg-[#DDD6FE]"
+              className="whitespace-nowrap rounded-full bg-[#e5f1f2] px-3 py-1.5 text-xs font-semibold text-[#0E5A72] transition hover:bg-[#d7e5e2]"
             >
               Clear filter
             </button>
           )}
-          <MessageSquare className="h-5 w-5 shrink-0 text-[#7C3AED]" strokeWidth={1.8} />
+          <MessageSquare className="h-5 w-5 shrink-0 text-[#0E5A72]" strokeWidth={1.8} />
         </div>
       </div>
 
@@ -1290,15 +1290,15 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
               onClick={() => setSelectedRating((current) => current === star ? 0 : star)}
               className={`min-w-0 rounded-2xl border px-1.5 py-2 text-center text-xs font-semibold transition active:translate-y-[1px] ${
                 selectedRating === star
-                  ? 'border-[#7C3AED] bg-[#EDE9FE] text-[#332F3A] shadow-sm'
-                  : 'border-slate-100 bg-[#FAF7FF] text-slate-600 hover:border-[#DDD6FE] hover:bg-[#eef7f3]'
+                  ? 'border-[#0E5A72] bg-[#e5f1f2] text-[#0B2530] shadow-sm'
+                  : 'border-slate-100 bg-[#f8fbf8] text-slate-600 hover:border-[#d7e5e2] hover:bg-[#eef7f3]'
               }`}
               aria-pressed={selectedRating === star}
               aria-label={`Show ${star} star review${star === 1 ? '' : 's'}`}
             >
               <span className="flex items-center justify-center gap-0.5 whitespace-nowrap">
                 {star}
-                <Star className={`h-3.5 w-3.5 ${hasReviews ? 'fill-[#7C3AED] text-[#7C3AED]' : 'fill-slate-100 text-slate-300'}`} strokeWidth={1.8} />
+                <Star className={`h-3.5 w-3.5 ${hasReviews ? 'fill-[#0E5A72] text-[#0E5A72]' : 'fill-slate-100 text-slate-300'}`} strokeWidth={1.8} />
               </span>
               <span className={`mt-1 block text-[11px] leading-none ${hasReviews ? 'text-slate-800' : 'text-slate-400'}`}>{count}</span>
             </button>
@@ -1312,12 +1312,12 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
 
       <div className="mt-5 space-y-3">
         {filteredReviews.length === 0 ? (
-          <p className="rounded-2xl bg-[#FAF7FF] p-4 text-sm text-slate-500">{selectedRating > 0 ? `No ${selectedRating}-star reviews yet.` : 'No public review comments yet.'}</p>
+          <p className="rounded-2xl bg-[#f8fbf8] p-4 text-sm text-slate-500">{selectedRating > 0 ? `No ${selectedRating}-star reviews yet.` : 'No public review comments yet.'}</p>
         ) : (
           filteredReviews.map((review, index) => {
             const display = getReviewDisplay(review)
             return (
-              <div key={`${review.establishment_id}-${review.created_at}-${index}`} className="rounded-2xl bg-[#FAF7FF] p-4">
+              <div key={`${review.establishment_id}-${review.created_at}-${index}`} className="rounded-2xl bg-[#f8fbf8] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <RatingDisplay summary={{ average: review.rating, count: 1, breakdown: { ...emptyBreakdown, [review.rating]: 1 }, commentCount: display.comment ? 1 : 0 }} />
                   <span className="text-xs text-slate-400">{new Date(review.created_at).toLocaleDateString()}</span>
@@ -1339,9 +1339,9 @@ function RatingDisplay({ summary, className = '' }: { summary?: RatingSummary; c
 
   return (
     <div className={`flex items-center gap-2 text-sm font-semibold text-slate-600 ${className}`}>
-      <div className="flex items-center gap-0.5 text-[#7C3AED]">
+      <div className="flex items-center gap-0.5 text-[#0E5A72]">
         {[1, 2, 3, 4, 5].map((star) => (
-          <Star key={star} className={`h-4 w-4 ${star <= rounded ? 'fill-[#7C3AED]' : 'fill-slate-100'}`} strokeWidth={1.8} />
+          <Star key={star} className={`h-4 w-4 ${star <= rounded ? 'fill-[#0E5A72]' : 'fill-slate-100'}`} strokeWidth={1.8} />
         ))}
       </div>
       <span>{rating.localOnly ? 'Saved on this device only' : rating.count > 0 ? `${rating.average.toFixed(1)} (${rating.count})` : 'No ratings yet'}</span>
@@ -1351,7 +1351,7 @@ function RatingDisplay({ summary, className = '' }: { summary?: RatingSummary; c
 
 function InfoRow({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-2xl bg-[#FAF7FF] p-3">
+    <div className="flex items-center gap-2 rounded-2xl bg-[#f8fbf8] p-3">
       <Icon className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
       <span>{text}</span>
     </div>
