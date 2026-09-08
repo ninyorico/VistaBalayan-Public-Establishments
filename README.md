@@ -1,21 +1,22 @@
-# VistaBalayan
+# VistaBalayan Public Viewing Website
 
-A Web-Based Tourism Data Analytics and Decision Support System for Visitor Monitoring in Balayan, Batangas.
+A visitor-facing tourism website for discovering establishments and planning visits in Balayan, Batangas.
 
 ## Features
 
-- Visitor and Accommodation Reporting
-- Analytics Dashboard with Charts
-- AI-Powered Insights and Anomaly Detection
-- Role-Based Access (Tourism Officer & Establishment Staff)
-- Report Approval Workflow
+- Public establishment listings
+- Establishment details, photos, ratings, and reviews
+- Map pins, directions, and road-distance estimates
+- Nearby establishment recommendations
+- Personalized recommendations based on visitor browsing behavior and preferences
+- No establishment staff account required
 
 ## Tech Stack
 
 - React 18
 - Tailwind CSS
 - Supabase (PostgreSQL)
-- Google Gemini AI
+- Leaflet and OpenStreetMap/OSRM mapping services
 - Vite
 
 ## Local Setup
@@ -24,7 +25,7 @@ A Web-Based Tourism Data Analytics and Decision Support System for Visitor Monit
    ```bash
    npm ci
    ```
-2. Copy the environment template and fill in your Supabase project values:
+2. Copy the environment template and fill in the public Supabase project values:
    ```bash
    cp .env.example .env.local
    ```
@@ -37,3 +38,5 @@ Required environment variables:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+
+Only the Supabase anonymous key belongs in the browser-facing application. Never put a Supabase service-role key or other server secret in a `VITE_` variable.
