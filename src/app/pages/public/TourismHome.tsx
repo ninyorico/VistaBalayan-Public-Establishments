@@ -31,6 +31,7 @@ interface Establishment {
   id: string
   name: string
   type: string
+  dot_classification?: string | null
   address: string
   contact_number: string
   description: string
@@ -109,15 +110,20 @@ const emptyBehavior: BehaviorProfile = {
   searches: [],
 }
 
-const getPublicCategory = (type = '') => {
-  const normalized = type.toLowerCase()
-  if (normalized.includes('hotel') || normalized.includes('inn') || normalized.includes('lodge')) return 'Hotel'
-  if (normalized.includes('resort') || normalized.includes('pool') || normalized.includes('farm')) return 'Resort'
+const getPublicCategory = (type = '', dotClassification: string | null = '') => {
+  const normalizedType = type.toLowerCase()
+  const normalizedClass = String(dotClassification || '').toLowerCase().trim()
+  const isResort = normalizedClass === 'res' || normalizedClass.includes('resort') || normalizedType.includes('resort') || normalizedType.includes('pool') || normalizedType.includes('farm')
+  if (isResort) return 'Resort'
+
+  const accommodationClasses = ['htl', 'apa', 'inn', 'pen', 'mot', 'eco', 'hms', 'cmp', 'oth']
+  if (accommodationClasses.includes(normalizedClass) || normalizedClass.includes('hotel') || normalizedClass.includes('apartelle') || normalizedClass.includes('tourist inn') || normalizedClass.includes('pension') || normalizedClass.includes('motel') || normalizedClass.includes('eco-lodge') || normalizedClass.includes('home stay') || normalizedClass.includes('glamping')) return 'Hotel'
+  if (normalizedType.includes('hotel') || normalizedType.includes('inn') || normalizedType.includes('lodge')) return 'Hotel'
   return null
 }
 
-const getCategoryIcon = (type: string) => {
-  return getPublicCategory(type) === 'Hotel' ? Building2 : Hotel
+const getCategoryIcon = (type: string, dotClassification: string | null = '') => {
+  return getPublicCategory(type, dotClassification) === 'Hotel' ? Building2 : Hotel
 }
 
 const PUBLIC_LISTING_REAL_PINS: Record<string, UserLocation> = {
@@ -483,7 +489,7 @@ export default function TourismHome() {
       .order('name')
 
     if (!error && data) {
-      const publicStays = data.filter((est) => getPublicCategory(est.type)).map(replaceGenericListingPhotos)
+      const publicStays = data.filter((est) => getPublicCategory(est.type, est.dot_classification)).map(replaceGenericListingPhotos)
       setEstablishments(publicStays)
       setFiltered(publicStays)
       await fetchRatingSummaries(publicStays.map((est) => est.id), visitorToken)
@@ -710,7 +716,7 @@ export default function TourismHome() {
   const recommendations = useMemo(() => {
     return establishments
       .map((est) => {
-        const publicCategory = getPublicCategory(est.type) || 'Resort'
+        const publicCategory = getPublicCategory(est.type, est.dot_classification) || 'Resort'
         const distance = userLocation ? routeDistances[est.id] ?? null : null
         const categoryBoost = behavior.categoryClicks[publicCategory] || 0
         const viewedBoost = behavior.viewedIds.includes(est.id) ? 12 : 0
@@ -917,9 +923,9 @@ export default function TourismHome() {
           ) : (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
               {filtered.map((est) => {
-                const Icon = getCategoryIcon(est.type)
+                const Icon = getCategoryIcon(est.type, est.dot_classification)
                 const displayImage = est.images && est.images.length > 0 ? est.images[0] : null
-                const publicCategory = getPublicCategory(est.type)
+                const publicCategory = getPublicCategory(est.type, est.dot_classification)
                 return (
                   <Card
                     key={est.id}
@@ -1009,7 +1015,7 @@ export default function TourismHome() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold leading-5 text-slate-950">{est.name}</p>
-                      <p className="mt-1 text-sm text-slate-500">{getPublicCategory(est.type)}</p>
+                      <p className="mt-1 text-sm text-slate-500">{getPublicCategory(est.type, est.dot_classification)}</p>
                     </div>
                     <Badge variant="outline" className="rounded-full border-[#d7e5e2] bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-sm">
                       {est.distance === null ? 'Use GPS' : `${est.distance.toFixed(1)} km route`}
