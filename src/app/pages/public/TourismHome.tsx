@@ -18,6 +18,7 @@ import {
   Sparkles,
   Star,
   X,
+  ImagePlus,
 } from 'lucide-react'
 import React from 'react'
 import { Button } from '../../components/ui/button'
@@ -69,6 +70,7 @@ interface RatingReview {
   comment: string | null
   reviewer_name: string | null
   created_at: string
+  photo_path?: string | null
 }
 
 interface LocalRating {
@@ -97,6 +99,7 @@ const emptyBreakdown: RatingBreakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
 
 const createEmptyRatingSummary = (): RatingSummary => ({ average: 0, count: 0, breakdown: { ...emptyBreakdown }, commentCount: 0 })
 const emptyRatingSummary = createEmptyRatingSummary()
+const INAPPROPRIATE_REVIEW_PATTERN = /(^|[^a-z0-9])(asshole|bastard|bitch|bullshit|cunt|dick|fuck|fucker|motherfucker|nigger|piss|porn|shit|slut|whore)([^a-z0-9]|$)/i
 
 const categories = [
   { id: 'all', name: 'All stays', icon: Search },
@@ -410,6 +413,8 @@ export default function TourismHome() {
   const [selectedReviewRating, setSelectedReviewRating] = useState(0)
   const [reviewerName, setReviewerName] = useState('')
   const [reviewComment, setReviewComment] = useState('')
+  const [reviewPhoto, setReviewPhoto] = useState<File | null>(null)
+  const [reviewPhotoPreview, setReviewPhotoPreview] = useState('')
   const [ratingReviews, setRatingReviews] = useState<Record<string, RatingReview[]>>({})
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null)
   const [routeDistances, setRouteDistances] = useState<Record<string, number>>({})
@@ -515,7 +520,7 @@ export default function TourismHome() {
   const fetchRatingReviews = async (establishmentId: string) => {
     let { data, error } = await supabase
       .from('establishment_rating_reviews')
-      .select('establishment_id, rating, comment, reviewer_name, created_at')
+      .select('establishment_id, rating, comment, reviewer_name, photo_path, created_at')
       .eq('establishment_id', establishmentId)
       .order('created_at', { ascending: false })
       .limit(50)
@@ -527,7 +532,7 @@ export default function TourismHome() {
         .eq('establishment_id', establishmentId)
         .order('created_at', { ascending: false })
         .limit(50)
-      data = legacyResult.data as RatingReview[] | null
+      data = (legacyResult.data || []).map((item) => ({ ...item, reviewer_name: null, photo_path: null }))
       error = legacyResult.error
     }
 
@@ -561,23 +566,36 @@ export default function TourismHome() {
     }
 
     const comment = reviewComment.trim()
-    let { error } = await supabase.rpc('submit_establishment_rating', {
+    if (INAPPROPRIATE_REVIEW_PATTERN.test(`${name} ${comment}`)) {
+      setRatingMessage('Please remove inappropriate language before submitting your review.')
+      setSubmittingRating(false)
+      return
+    }
+
+    let photoPath: string | null = null
+    if (reviewPhoto) {
+      const extension = reviewPhoto.name.split('.').pop()?.toLowerCase() || 'jpg'
+      photoPath = `${selectedEstablishment.id}/${crypto.randomUUID()}.${extension}`
+      const { error: uploadError } = await supabase.storage.from('review-photos').upload(photoPath, reviewPhoto, {
+        cacheControl: '3600',
+        contentType: reviewPhoto.type,
+        upsert: false,
+      })
+      if (uploadError) {
+        setRatingMessage(`Photo upload failed: ${uploadError.message}`)
+        setSubmittingRating(false)
+        return
+      }
+    }
+
+    const { error } = await supabase.rpc('submit_establishment_rating', {
       p_establishment_id: selectedEstablishment.id,
       p_visitor_token: visitorToken,
       p_rating: selectedReviewRating,
       p_comment: comment || null,
       p_reviewer_name: name,
+      p_photo_path: photoPath,
     })
-
-    if (error) {
-      const legacyResult = await supabase.rpc('submit_establishment_rating', {
-        p_establishment_id: selectedEstablishment.id,
-        p_visitor_token: visitorToken,
-        p_rating: selectedReviewRating,
-        p_comment: buildLegacyReviewComment(name, comment),
-      })
-      error = legacyResult.error
-    }
 
     saveLocalRating(selectedEstablishment.id, selectedReviewRating, comment, name)
 
@@ -599,6 +617,8 @@ export default function TourismHome() {
       setRatingMessage('Thanks, your review was saved with your name.')
       setReviewerName('')
       setReviewComment('')
+      setReviewPhoto(null)
+      setReviewPhotoPreview('')
       await fetchRatingSummaries(establishments.map((est) => est.id), visitorToken)
       await fetchRatingReviews(selectedEstablishment.id)
     }
@@ -1223,6 +1243,43 @@ export default function TourismHome() {
                     placeholder="Optional: tell others why you chose this rating"
                     className="min-h-24 w-full rounded-2xl border border-cyan-100 bg-white p-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-4 focus:ring-[#34A0A4]/25"
                   />
+                  <div className="rounded-2xl border border-dashed border-cyan-200 bg-white/70 p-3">
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-[#0E5A72]">
+                      <ImagePlus className="h-4 w-4" />
+                      Add a photo (optional)
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="sr-only"
+                        disabled={submittingRating}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0]
+                          event.target.value = ''
+                          if (!file) return
+                          if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                            setRatingMessage('Please choose a JPG, PNG, or WebP image.')
+                            return
+                          }
+                          if (file.size > 5 * 1024 * 1024) {
+                            setRatingMessage('Review photos must be 5 MB or smaller.')
+                            return
+                          }
+                          setReviewPhoto(file)
+                          setReviewPhotoPreview(URL.createObjectURL(file))
+                          setRatingMessage('')
+                        }}
+                      />
+                    </label>
+                    {reviewPhoto && (
+                      <div className="mt-3 flex items-center gap-3">
+                        {reviewPhotoPreview && <img src={reviewPhotoPreview} alt="Selected review preview" className="h-16 w-16 rounded-xl object-cover" />}
+                        <div className="min-w-0 flex-1 text-xs text-slate-600">
+                          <p className="truncate">{reviewPhoto.name}</p>
+                          <button type="button" onClick={() => { setReviewPhoto(null); setReviewPhotoPreview('') }} className="mt-1 font-semibold text-rose-700 hover:underline">Remove photo</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs text-slate-500">Name required · {reviewComment.length}/500 comment characters</p>
                     <Button
@@ -1329,6 +1386,14 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
                   <span className="text-xs text-slate-400">{new Date(review.created_at).toLocaleDateString()}</span>
                 </div>
                 <p className="mt-2 text-sm font-semibold text-slate-800">{display.reviewerName}</p>
+                {review.photo_path && (
+                  <img
+                    src={supabase.storage.from('review-photos').getPublicUrl(review.photo_path).data.publicUrl}
+                    alt="Photo shared with this review"
+                    className="mt-3 max-h-72 w-full rounded-2xl object-cover"
+                    loading="lazy"
+                  />
+                )}
                 {display.comment && <p className="mt-2 text-sm leading-6 text-slate-600">{display.comment}</p>}
               </div>
             )
