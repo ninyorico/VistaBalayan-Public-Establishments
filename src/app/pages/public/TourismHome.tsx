@@ -99,7 +99,7 @@ const emptyBreakdown: RatingBreakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
 
 const createEmptyRatingSummary = (): RatingSummary => ({ average: 0, count: 0, breakdown: { ...emptyBreakdown }, commentCount: 0 })
 const emptyRatingSummary = createEmptyRatingSummary()
-const INAPPROPRIATE_REVIEW_PATTERN = /(^|[^a-z0-9])(asshole|bastard|bitch|bullshit|cunt|dick|fuck|fucker|motherfucker|nigger|piss|porn|shit|slut|whore)([^a-z0-9]|$)/i
+const INAPPROPRIATE_REVIEW_PATTERN = /(^|[^a-z0-9])(asshole|bastard|bitch|bullshit|cunt|dick|fuck|fucker|motherfucker|nigger|piss|porn|shit|slut|whore|putang\s*ina|tangina|tanga|gago|gaga|ulol|tarantado|leche|lecheng|pakyu|pakyaw|burat|kantot|iyot|putok)([^a-z0-9]|$)/i
 
 const categories = [
   { id: 'all', name: 'All stays', icon: Search },
@@ -1315,6 +1315,7 @@ export default function TourismHome() {
 
 function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: RatingReview[] }) {
   const [selectedRating, setSelectedRating] = useState(0)
+  const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null)
   const sortedReviews = sortReviewsForDisplay(reviews)
   const filteredReviews = selectedRating > 0
     ? sortedReviews.filter((review) => review.rating === selectedRating)
@@ -1387,12 +1388,20 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
                 </div>
                 <p className="mt-2 text-sm font-semibold text-slate-800">{display.reviewerName}</p>
                 {review.photo_path && (
-                  <img
-                    src={supabase.storage.from('review-photos').getPublicUrl(review.photo_path).data.publicUrl}
-                    alt="Photo shared with this review"
-                    className="mt-3 max-h-72 w-full rounded-2xl object-cover"
-                    loading="lazy"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setExpandedPhoto(supabase.storage.from('review-photos').getPublicUrl(review.photo_path as string).data.publicUrl)}
+                    className="group mt-3 block overflow-hidden rounded-xl text-left focus:outline-none focus:ring-4 focus:ring-[#34A0A4]/30"
+                    aria-label="Expand photo shared with this review"
+                  >
+                    <img
+                      src={supabase.storage.from('review-photos').getPublicUrl(review.photo_path).data.publicUrl}
+                      alt="Photo shared with this review. Click to expand."
+                      className="h-20 w-28 rounded-xl object-cover transition duration-200 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <span className="mt-1 block text-[11px] font-medium text-[#0E5A72]">Click to expand</span>
+                  </button>
                 )}
                 {display.comment && <p className="mt-2 text-sm leading-6 text-slate-600">{display.comment}</p>}
               </div>
@@ -1400,6 +1409,31 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
           })
         )}
       </div>
+
+      {expandedPhoto && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Expanded review photo"
+          onClick={() => setExpandedPhoto(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setExpandedPhoto(null)}
+            className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg hover:bg-white focus:outline-none focus:ring-4 focus:ring-white/50"
+            aria-label="Close expanded photo"
+          >
+            <span className="text-2xl leading-none">×</span>
+          </button>
+          <img
+            src={expandedPhoto}
+            alt="Expanded photo shared with this review"
+            className="max-h-[88vh] max-w-[94vw] rounded-2xl object-contain shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   )
 }
