@@ -99,7 +99,7 @@ const emptyBreakdown: RatingBreakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
 
 const createEmptyRatingSummary = (): RatingSummary => ({ average: 0, count: 0, breakdown: { ...emptyBreakdown }, commentCount: 0 })
 const emptyRatingSummary = createEmptyRatingSummary()
-const INAPPROPRIATE_REVIEW_PATTERN = /(^|[^a-z0-9])(asshole|bastard|bitch|bullshit|cunt|dick|fuck|fucker|motherfucker|nigger|piss|porn|shit|slut|whore|putang\s*ina|tangina|tanga|gago|gaga|ulol|tarantado|leche|lecheng|pakyu|pakyaw|burat|kantot|iyot|putok)([^a-z0-9]|$)/i
+const INAPPROPRIATE_REVIEW_PATTERN = /(^|[^a-z0-9])(asshole|bastard|bitch|bullshit|cunt|dick|fuck|fucker|motherfucker|nigger|piss|porn|shit|slut|whore|putang\s*ina|tangina|tanga|gago|gaga|ulol|tarantado|leche|lecheng|pakyu|burat|kantot|iyot)([^a-z0-9]|$)/i
 
 const categories = [
   { id: 'all', name: 'All stays', icon: Search },
