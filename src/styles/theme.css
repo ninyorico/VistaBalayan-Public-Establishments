@@ -3,31 +3,31 @@
 :root {
   --font-size: 16px;
 
-  /* VistaBalayan clean tourism palette: neutral base plus one coastal accent */
-  --ocean-blue: #0E5A72;
-  --navy-blue: #0B2530;
-  --teal-blue: #168AAD;
-  --cyan-teal: #168AAD;
-  --bright-cyan: #168AAD;
-  --coastal-sand: #F3EEE2;
-  --sunlit-foam: #FAFCFB;
-  --mist-blue: #EAF2F1;
-  --mangrove-green: #2F5F55;
-  --sunset-coral: #9A6A5A;
+  /* Shared VistaBalayan Neumorphic palette */
+  --ocean-blue: #193364;
+  --navy-blue: #193364;
+  --teal-blue: #0F3B2D;
+  --cyan-teal: #6C9772;
+  --bright-cyan: #6C9772;
+  --coastal-sand: #FBE7BA;
+  --sunlit-foam: #F5F8FF;
+  --mist-blue: #E5E8E1;
+  --mangrove-green: #6C9772;
+  --sunset-coral: #B88A52;
 
   /* Neutral Colors */
-  --pure-white: #FFFFFF;
-  --light-gray-bg: #F6F8F7;
-  --border-gray: #DEE8E6;
-  --text-secondary: #617174;
-  --text-dark-navy: #0B2530;
+  --pure-white: #F5F8FF;
+  --light-gray-bg: #E5E8E1;
+  --border-gray: #AFB3B5;
+  --text-secondary: #323232;
+  --text-dark-navy: #193364;
 
   /* Accent Colors kept muted for dashboards */
-  --success-green: #2F5F55;
-  --warning-orange: #9A6A37;
-  --alert-yellow: #8A742F;
-  --soft-purple: #5F6475;
-  --info-blue: #0E5A72;
+  --success-green: #6C9772;
+  --warning-orange: #B88A52;
+  --alert-yellow: #FDBC02;
+  --soft-purple: #6C63FF;
+  --info-blue: #193364;
 
   /* Application Variables */
   --background: var(--light-gray-bg);
@@ -44,7 +44,7 @@
   --muted-foreground: var(--text-secondary);
   --accent: var(--teal-blue);
   --accent-foreground: var(--pure-white);
-  --destructive: #9F2A24;
+  --destructive: #F94345;
   --destructive-foreground: var(--pure-white);
   --border: var(--border-gray);
   --input: transparent;
@@ -55,11 +55,11 @@
   --ring: var(--teal-blue);
 
   /* Chart colors: restrained, mostly coastal monochrome */
-  --chart-1: #0E5A72;
-  --chart-2: #5F7F82;
-  --chart-3: #2F5F55;
-  --chart-4: #9A8F75;
-  --chart-5: #0B2530;
+  --chart-1: #193364;
+  --chart-2: #6C9772;
+  --chart-3: #B88A52;
+  --chart-4: #FDBC02;
+  --chart-5: #0F3B2D;
 
   --radius: 1rem;
   --sidebar: var(--pure-white);
@@ -86,8 +86,8 @@
   body {
     min-height: 100dvh;
     background:
-      radial-gradient(circle at 10% 0%, rgba(14, 90, 114, 0.08), transparent 28rem),
-      linear-gradient(180deg, #fafcfb 0%, #f6f8f7 58%, #f3eee2 140%);
+      radial-gradient(circle at 10% 0%, rgba(193, 197, 195, 0.22), transparent 28rem),
+      linear-gradient(180deg, #F5F8FF 0%, #E5E8E1 58%, #FBE7BA 140%);
     color: var(--foreground);
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "tnum";
@@ -120,33 +120,33 @@
 @layer components {
   .tourism-shell {
     background:
-      radial-gradient(circle at 12% 0%, rgba(14, 90, 114, 0.08), transparent 28rem),
-      linear-gradient(180deg, #fafcfb 0%, #f6f8f7 58%, #f3eee2 140%);
+      radial-gradient(circle at 12% 0%, rgba(193, 197, 195, 0.22), transparent 28rem),
+      linear-gradient(180deg, #F5F8FF 0%, #E5E8E1 58%, #FBE7BA 140%);
   }
 
   .tourism-card {
-    border: 1px solid rgba(14, 90, 114, 0.10);
-    background: rgba(255, 255, 255, 0.90);
-    box-shadow: 0 18px 56px rgba(11, 37, 48, 0.07);
+    border: 1px solid rgba(175, 179, 181, 0.55);
+    background: rgba(245, 248, 255, 0.82);
+    box-shadow: 9px 9px 16px rgba(163, 177, 198, 0.42), -9px -9px 16px rgba(255, 255, 255, 0.62);
     backdrop-filter: blur(14px);
   }
 
   .tourism-panel-dark {
     background:
-      radial-gradient(circle at 16% 0%, rgba(22, 138, 173, 0.18), transparent 22rem),
-      linear-gradient(135deg, #0e5a72 0%, #0b2530 100%);
+      radial-gradient(circle at 16% 0%, rgba(108, 151, 114, 0.18), transparent 22rem),
+      linear-gradient(135deg, #193364 0%, #0F3B2D 100%);
   }
 
   .tourism-button {
     border-radius: 1rem;
     background: var(--ocean-blue);
     color: white;
-    box-shadow: 0 14px 30px rgba(11, 37, 48, 0.16);
+    box-shadow: 8px 8px 16px rgba(163, 177, 198, 0.48), -6px -6px 14px rgba(255, 255, 255, 0.48);
     transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
   }
 
   .tourism-button:hover {
-    background: var(--navy-blue);
+    background: var(--teal-blue);
     transform: translateY(-1px);
     box-shadow: 0 18px 36px rgba(11, 37, 48, 0.20);
   }
