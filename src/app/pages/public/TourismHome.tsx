@@ -816,7 +816,7 @@ export default function TourismHome() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#f5faf8] text-[#193364]">
+    <main className="min-h-[100dvh] bg-[#E5E8E1] text-[#193364]">
       <section className="relative overflow-hidden border-b border-[#AFB3B5] bg-[#193364] text-white">
         {featuredImage && (
           <img
@@ -846,7 +846,7 @@ export default function TourismHome() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search resort, hotel, address, pool, beach, or amenity"
-                  className="h-14 rounded-[1.1rem] border-white/20 bg-white pl-12 pr-4 text-base text-slate-950 shadow-none placeholder:text-slate-400 focus-visible:ring-[#34A0A4]/30"
+                  className="h-14 rounded-[1.1rem] border-white/20 bg-white pl-12 pr-4 text-base text-slate-950 shadow-none placeholder:text-slate-400 focus-visible:ring-[#6C9772]/30"
                 />
               </div>
             </Card>
@@ -863,7 +863,7 @@ export default function TourismHome() {
                   type="button"
                   onClick={requestLocation}
                   disabled={locationStatus === 'loading'}
-                  className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-none hover:bg-cyan-50 active:translate-y-[1px] disabled:cursor-wait disabled:opacity-80"
+                  className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-none hover:bg-[#E5E8E1] active:translate-y-[1px] disabled:cursor-wait disabled:opacity-80"
                 >
                   {locationStatus === 'loading' && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />}
                   {locationStatus === 'loading' ? 'Locating...' : locationStatus === 'ready' ? 'Location on' : 'Use location'}
@@ -907,7 +907,7 @@ export default function TourismHome() {
                     variant={selectedType === cat.id ? 'default' : 'secondary'}
                     className={`rounded-2xl px-4 py-2.5 text-sm font-semibold shadow-none active:translate-y-[1px] ${
                       selectedType === cat.id
-                        ? 'bg-[#193364] text-white hover:bg-[#0F3B2D]'
+                        ? 'bg-[#193364] text-white hover:bg-[#193364]'
                         : 'bg-[#E5E8E1] text-[#193364] hover:bg-[#AFB3B5]'
                     }`}
                   >
@@ -1153,7 +1153,7 @@ export default function TourismHome() {
                 {selectedEstablishment.email && <InfoRow icon={Mail} text={selectedEstablishment.email} />}
                 {selectedEstablishment.opening_hours && <InfoRow icon={Clock} text={selectedEstablishment.opening_hours} />}
                 {selectedEstablishment.website_url && (
-                  <a href={selectedEstablishment.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-2xl bg-[#F5F8FF] p-3 font-medium text-[#193364] hover:bg-cyan-50">
+                  <a href={selectedEstablishment.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-2xl bg-[#F5F8FF] p-3 font-medium text-[#193364] hover:bg-[#E5E8E1]">
                     <Globe className="h-4 w-4" strokeWidth={1.8} />
                     Visit website
                   </a>
@@ -1174,7 +1174,7 @@ export default function TourismHome() {
                     <Button
                       type="button"
                       onClick={() => openDirectionsToEstablishment(selectedEstablishment)}
-                      className="rounded-2xl bg-[#193364] px-4 py-2.5 text-sm font-semibold text-white shadow-none hover:bg-[#0F3B2D]"
+                      className="rounded-2xl bg-[#193364] px-4 py-2.5 text-sm font-semibold text-white shadow-none hover:bg-[#193364]"
                     >
                       <Navigation className="h-4 w-4" strokeWidth={1.8} />
                       Get Directions
@@ -1235,13 +1235,13 @@ export default function TourismHome() {
                     placeholder="Your name"
                     aria-label="Your name"
                     required
-                    className="w-full rounded-2xl border border-cyan-100 bg-white p-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-4 focus:ring-[#34A0A4]/25"
+                    className="w-full rounded-2xl border border-cyan-100 bg-white p-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-4 focus:ring-[#6C9772]/25"
                   />
                   <textarea
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value.slice(0, 500))}
                     placeholder="Optional: tell others why you chose this rating"
-                    className="min-h-24 w-full rounded-2xl border border-cyan-100 bg-white p-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-4 focus:ring-[#34A0A4]/25"
+                    className="min-h-24 w-full rounded-2xl border border-cyan-100 bg-white p-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-4 focus:ring-[#6C9772]/25"
                   />
                   <div className="rounded-2xl border border-dashed border-cyan-200 bg-white/70 p-3">
                     <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-[#193364]">
@@ -1286,7 +1286,7 @@ export default function TourismHome() {
                       type="button"
                       onClick={submitRating}
                       disabled={submittingRating || selectedReviewRating < 1 || !reviewerName.trim()}
-                      className="rounded-2xl bg-[#193364] px-5 py-2.5 text-sm font-semibold text-white shadow-none transition hover:bg-[#0F3B2D] disabled:cursor-not-allowed disabled:opacity-55"
+                      className="rounded-2xl bg-[#193364] px-5 py-2.5 text-sm font-semibold text-white shadow-none transition hover:bg-[#193364] disabled:cursor-not-allowed disabled:opacity-55"
                     >
                       {submittingRating ? 'Saving...' : 'Submit rating'}
                     </Button>
@@ -1300,7 +1300,7 @@ export default function TourismHome() {
 
               <Button
                 onClick={() => setSelectedEstablishment(null)}
-                className="mt-6 w-full rounded-2xl bg-[#193364] py-3.5 font-semibold text-white shadow-none transition hover:bg-[#0F3B2D] active:translate-y-[1px]"
+                className="mt-6 w-full rounded-2xl bg-[#193364] py-3.5 font-semibold text-white shadow-none transition hover:bg-[#193364] active:translate-y-[1px]"
               >
                 Close
               </Button>
@@ -1391,7 +1391,7 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
                   <button
                     type="button"
                     onClick={() => setExpandedPhoto(supabase.storage.from('review-photos').getPublicUrl(review.photo_path as string).data.publicUrl)}
-                    className="group mt-3 block overflow-hidden rounded-xl text-left focus:outline-none focus:ring-4 focus:ring-[#34A0A4]/30"
+                    className="group mt-3 block overflow-hidden rounded-xl text-left focus:outline-none focus:ring-4 focus:ring-[#6C9772]/30"
                     aria-label="Expand photo shared with this review"
                   >
                     <img
