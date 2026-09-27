@@ -929,10 +929,10 @@ export default function TourismHome() {
               <Sparkles className="h-4 w-4" strokeWidth={1.8} />
               VistaBalayan travel guide
             </Badge>
-            <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-5xl lg:text-6xl">
               Find stays that fit your Balayan trip.
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-7 text-[#323232] sm:text-lg">
+            <p className="mt-5 max-w-xl text-base leading-7 text-white/90 sm:text-lg">
               Browse verified resorts and hotels, compare ratings, and view every uploaded listing photo.
             </p>
             <Card className="public-neumorphic-surface mt-8 flex-col gap-0 overflow-hidden rounded-[1.5rem] border-[#AFB3B5] p-3 text-[#193364]">
