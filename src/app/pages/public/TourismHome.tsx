@@ -938,18 +938,18 @@ export default function TourismHome() {
             <p className="mt-5 max-w-xl text-base leading-7 text-[#323232] sm:text-lg">
               Browse verified resorts and hotels, compare ratings, and view every uploaded listing photo.
             </p>
-            <Card className="public-neumorphic-surface mt-8 overflow-hidden rounded-[1.5rem] p-2 text-[#193364]">
+            <Card className="public-neumorphic-surface mt-8 overflow-hidden rounded-[1.5rem] border-[#AFB3B5] p-3 text-[#193364]">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <Search className="absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-[#6C7895]" />
                 <Input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search resort, hotel, address, pool, beach, or amenity"
-                  className="public-neumorphic-inset h-14 rounded-[1.1rem] border-0 pl-12 pr-4 text-base text-[#193364] shadow-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-[#193364]/25"
+                  className="h-14 rounded-[1.25rem] border border-[#AFB3B5] bg-[#E0E5EC] pl-12 pr-4 text-base text-[#193364] shadow-[inset_4px_4px_9px_rgba(163,177,198,0.38),inset_-4px_-4px_9px_rgba(255,255,255,0.70)] placeholder:text-[#6C7895] focus-visible:border-[#193364]/45 focus-visible:ring-2 focus-visible:ring-[#193364]/20"
                 />
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2 lg:hidden">
+              <div className="mt-1 grid grid-cols-2 gap-2 lg:hidden">
                 <Button
                   type="button"
                   onClick={() => setMobileDiscoveryPanel('nearest')}
