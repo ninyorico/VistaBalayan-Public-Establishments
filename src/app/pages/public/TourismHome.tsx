@@ -1685,7 +1685,7 @@ function RatingDisplay({ summary, className = '' }: { summary?: RatingSummary; c
           <Star key={star} className={`h-4 w-4 ${star <= rounded ? 'fill-[#193364]' : 'fill-slate-100'}`} strokeWidth={1.8} />
         ))}
       </div>
-      <span>{rating.localOnly ? 'Saved on this device only' : `${rating.count > 0 ? rating.average.toFixed(1) : '0.0'} (${rating.count})`}</span>
+      <span>{rating.localOnly ? 'Saved on this device only' : rating.count > 0 ? `${rating.average.toFixed(1)} (${rating.count})` : '(0)'}</span>
     </div>
   )
 }
