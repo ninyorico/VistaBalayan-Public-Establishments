@@ -876,7 +876,6 @@ export default function TourismHome() {
       .slice(0, 4)
   }, [establishments, userLocation, routeDistances])
 
-  const featuredImage = establishments.find((est) => est.images?.length)?.images?.[0]
   const selectedRating = selectedEstablishment ? ratingSummaries[selectedEstablishment.id] || emptyRatingSummary : emptyRatingSummary
   const selectedReviews = selectedEstablishment ? ratingReviews[selectedEstablishment.id] || [] : []
   const selectedPhotos = selectedEstablishment?.images?.filter((image) => typeof image === 'string' && image.trim().length > 0) || []
@@ -918,13 +917,11 @@ export default function TourismHome() {
   return (
     <main className="min-h-[100dvh] bg-[#E0E5EC] text-[#193364]">
       <section className="relative overflow-hidden border-b border-[#AFB3B5] bg-[#E0E5EC] text-[#193364]">
-        {featuredImage && (
-          <img
-            src={featuredImage}
-            alt="Balayan resort and hotel destination"
-            className="absolute inset-0 h-full w-full object-cover opacity-42"
-          />
-        )}
+        <img
+          src="/balayan-church-hero.jpg"
+          alt="Historic church and plaza in Balayan"
+          className="absolute inset-0 h-full w-full object-cover opacity-42"
+        />
         <div className="absolute inset-0 bg-[#E0E5EC]/88" />
         <div className="relative mx-auto grid min-h-0 max-w-7xl grid-cols-1 items-center gap-8 px-5 py-10 sm:px-6 lg:min-h-[76dvh] lg:grid-cols-[1.02fr_0.98fr] lg:px-8">
           <div className="max-w-2xl">
