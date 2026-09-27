@@ -922,17 +922,18 @@ export default function TourismHome() {
           alt="Historic church and plaza in Balayan"
           className="absolute inset-0 h-full w-full object-cover opacity-42"
         />
-        <div className="absolute inset-0 bg-[#E0E5EC]/88" />
+        <div className="absolute inset-0 bg-[#E0E5EC]/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#193364]/85 via-[#193364]/55 to-transparent" />
         <div className="relative mx-auto grid min-h-0 max-w-7xl grid-cols-1 items-center gap-8 px-5 py-10 sm:px-6 lg:min-h-[76dvh] lg:grid-cols-[1.02fr_0.98fr] lg:px-8">
           <div className="max-w-2xl">
             <Badge className="mb-5 rounded-full border-[#AFB3B5] bg-[#E5E8E1] px-4 py-2 text-sm font-medium text-[#193364] shadow-[inset_3px_3px_7px_rgba(163,177,198,0.35),inset_-3px_-3px_7px_rgba(255,255,255,0.65)] hover:bg-[#E5E8E1]">
               <Sparkles className="h-4 w-4" strokeWidth={1.8} />
               VistaBalayan travel guide
             </Badge>
-            <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.045em] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.75)] sm:text-5xl lg:text-6xl">
               Find stays that fit your Balayan trip.
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-7 text-white/90 sm:text-lg">
+            <p className="mt-5 max-w-xl text-base leading-7 text-white/95 drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)] sm:text-lg">
               Browse verified resorts and hotels, compare ratings, and view every uploaded listing photo.
             </p>
             <Card className="public-neumorphic-surface mt-8 flex-col gap-0 overflow-hidden rounded-[1.5rem] border-[#AFB3B5] p-3 text-[#193364]">
