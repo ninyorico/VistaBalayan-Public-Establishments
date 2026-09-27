@@ -1417,13 +1417,13 @@ export default function TourismHome() {
                     </Button>
                     <Button
                       type="button"
-                      onClick={() => setShowSelectedMap(true)}
+                      onClick={() => setShowSelectedMap((current) => !current)}
                       variant="outline"
                       disabled={!hasExactLocation(selectedEstablishment)}
                       className="rounded-2xl border-[#AFB3B5] bg-[#F5F8FF] px-4 py-2.5 text-sm font-semibold text-[#193364] shadow-none hover:bg-[#E5E8E1] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <MapPin className="h-4 w-4" strokeWidth={1.8} />
-                      {hasExactLocation(selectedEstablishment) ? 'View map' : 'No exact pin'}
+                      {hasExactLocation(selectedEstablishment) ? (showSelectedMap ? 'Hide map' : 'View map') : 'No exact pin'}
                     </Button>
                   </div>
                 </div>
