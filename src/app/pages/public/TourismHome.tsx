@@ -816,8 +816,8 @@ export default function TourismHome() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#E5E8E1] text-[#193364]">
-      <section className="relative overflow-hidden border-b border-[#AFB3B5] bg-[#193364] text-white">
+    <main className="min-h-[100dvh] bg-[#E0E5EC] text-[#193364]">
+      <section className="relative overflow-hidden border-b border-[#AFB3B5] bg-[#E0E5EC] text-[#193364]">
         {featuredImage && (
           <img
             src={featuredImage}
@@ -825,20 +825,20 @@ export default function TourismHome() {
             className="absolute inset-0 h-full w-full object-cover opacity-42"
           />
         )}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(52,160,164,0.34),transparent_34%),linear-gradient(135deg,rgba(7,59,76,0.94),rgba(11,37,48,0.74)_46%,rgba(14,90,114,0.76))]" />
+        <div className="absolute inset-0 bg-[#E0E5EC]/88" />
         <div className="relative mx-auto grid min-h-[76dvh] max-w-7xl grid-cols-1 items-center gap-8 px-5 py-10 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:px-8">
           <div className="max-w-2xl">
-            <Badge className="mb-5 rounded-full border-white/15 bg-white/12 px-4 py-2 text-sm font-medium text-white shadow-none backdrop-blur-xl hover:bg-white/12">
+            <Badge className="mb-5 rounded-full border-[#AFB3B5] bg-[#E5E8E1] px-4 py-2 text-sm font-medium text-[#193364] shadow-[inset_3px_3px_7px_rgba(163,177,198,0.35),inset_-3px_-3px_7px_rgba(255,255,255,0.65)] hover:bg-[#E5E8E1]">
               <Sparkles className="h-4 w-4" strokeWidth={1.8} />
               VistaBalayan travel guide
             </Badge>
             <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-6xl">
               Find stays that fit your Balayan trip.
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-7 text-white/78 sm:text-lg">
+            <p className="mt-5 max-w-xl text-base leading-7 text-[#323232] sm:text-lg">
               Browse verified resorts and hotels, compare ratings, and view every uploaded listing photo.
             </p>
-            <Card className="mt-8 overflow-hidden rounded-[1.5rem] border-white/15 bg-white/12 p-2 text-white shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
+            <Card className="public-neumorphic-surface mt-8 overflow-hidden rounded-[1.5rem] p-2 text-[#193364]">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-slate-400" />
                 <Input
@@ -846,24 +846,24 @@ export default function TourismHome() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search resort, hotel, address, pool, beach, or amenity"
-                  className="h-14 rounded-[1.1rem] border-white/20 bg-white pl-12 pr-4 text-base text-slate-950 shadow-none placeholder:text-slate-400 focus-visible:ring-[#6C9772]/30"
+                  className="public-neumorphic-inset h-14 rounded-[1.1rem] border-0 pl-12 pr-4 text-base text-[#193364] shadow-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-[#193364]/25"
                 />
               </div>
             </Card>
           </div>
 
-          <Card className="rounded-[2rem] border-white/16 bg-white/14 text-white shadow-2xl shadow-slate-950/30 backdrop-blur-2xl">
+          <Card className="public-neumorphic-surface rounded-[2rem] text-[#193364]">
             <CardContent className="p-5 sm:p-6">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium text-white/66">Personalized picks</p>
+                  <p className="text-sm font-medium text-[#323232]">Personalized picks</p>
                   <h2 className="mt-1 text-2xl font-semibold tracking-[-0.025em]">Where to stay next</h2>
                 </div>
                 <Button
                   type="button"
                   onClick={requestLocation}
                   disabled={locationStatus === 'loading'}
-                  className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-none hover:bg-[#E5E8E1] active:translate-y-[1px] disabled:cursor-wait disabled:opacity-80"
+                  className="rounded-2xl bg-[#193364] px-4 py-2 text-sm font-semibold text-white shadow-[5px_5px_10px_rgba(163,177,198,0.60),-5px_-5px_10px_rgba(255,255,255,0.52)] hover:bg-[#193364] active:translate-y-[1px] disabled:cursor-wait disabled:opacity-80"
                 >
                   {locationStatus === 'loading' && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />}
                   {locationStatus === 'loading' ? 'Locating...' : locationStatus === 'ready' ? 'Location on' : 'Use location'}
@@ -874,15 +874,15 @@ export default function TourismHome() {
                   <button
                     key={est.id}
                     onClick={() => openDetails(est)}
-                    className="w-full rounded-2xl border border-white/12 bg-white/10 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white/16 active:translate-y-[1px]"
+                    className="w-full rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-4 text-left transition hover:bg-[#F5F8FF] active:translate-y-[1px]"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#193364]">
+                      <div className="public-neumorphic-inset mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl text-[#193364]">
                         {React.createElement(getCategoryIcon(est.type), { className: 'h-5 w-5', strokeWidth: 1.8 })}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold text-white">{est.name}</p>
-                        <p className="mt-1 text-sm leading-5 text-white/68">{est.reason}</p>
+                        <p className="truncate font-semibold text-[#193364]">{est.name}</p>
+                        <p className="mt-1 text-sm leading-5 text-[#323232]">{est.reason}</p>
                       </div>
                     </div>
                   </button>
@@ -894,7 +894,7 @@ export default function TourismHome() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-8 sm:px-6 lg:px-8">
-        <Card className="rounded-[1.75rem] border-[#AFB3B5] bg-white/92 shadow-[0_24px_80px_rgba(14,90,114,0.10)] backdrop-blur-xl">
+        <Card className="rounded-[1.75rem] border-[#AFB3B5] bg-[#E0E5EC] shadow-[9px_9px_16px_rgba(163,177,198,0.60),-9px_-9px_16px_rgba(255,255,255,0.55)]">
           <CardContent className="flex flex-col gap-5 p-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-2">
               {categories.map((cat) => {
@@ -928,7 +928,7 @@ export default function TourismHome() {
       <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-5 pb-16 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
         <div>
           {loading ? (
-            <Card className="rounded-[2rem] border-[#AFB3B5] bg-white/90 py-14 shadow-[0_24px_80px_rgba(14,90,114,0.08)]">
+            <Card className="rounded-[2rem] border-[#AFB3B5] bg-[#E0E5EC] py-14 shadow-[0_24px_80px_rgba(14,90,114,0.08)]">
               <CardContent className="flex flex-col items-center justify-center gap-4 p-6">
                 <div className="h-12 w-44 animate-pulse rounded-full bg-[#E5E8E1]" />
                 <div className="grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
@@ -937,7 +937,7 @@ export default function TourismHome() {
               </CardContent>
             </Card>
           ) : filtered.length === 0 ? (
-            <Card className="rounded-[2rem] border-[#AFB3B5] bg-white/90 p-12 text-center shadow-[0_24px_80px_rgba(14,90,114,0.08)]">
+            <Card className="rounded-[2rem] border-[#AFB3B5] bg-[#E0E5EC] p-12 text-center shadow-[0_24px_80px_rgba(14,90,114,0.08)]">
               <p className="text-slate-500">No resorts or hotels found. Try a different search.</p>
             </Card>
           ) : (
@@ -949,21 +949,21 @@ export default function TourismHome() {
                 return (
                   <Card
                     key={est.id}
-                    className="group overflow-hidden rounded-[1.7rem] border-[#AFB3B5] bg-white/95 py-0 shadow-[0_22px_70px_rgba(14,90,114,0.10)] backdrop-blur-xl transition duration-200 hover:-translate-y-1 hover:shadow-[0_32px_90px_rgba(14,90,114,0.16)]"
+                    className="public-neumorphic-surface group overflow-hidden rounded-[1.7rem] border-[#AFB3B5] py-0 transition duration-200 hover:-translate-y-1 hover:shadow-[12px_12px_20px_rgba(163,177,198,0.68),-12px_-12px_20px_rgba(255,255,255,0.62)]"
                   >
                     <button onClick={() => openDetails(est)} className="w-full text-left active:translate-y-[1px]">
                       {displayImage ? (
                         <div className="relative h-56 overflow-hidden">
                           <img src={displayImage} alt={est.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                           {est.images.length > 1 && (
-                            <Badge className="absolute bottom-3 right-3 rounded-full border-white/10 bg-slate-950/75 px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-slate-950/75">
+                            <Badge className="absolute bottom-3 right-3 rounded-full border-white/10 bg-[#193364]/75 px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-[#193364]/75">
                               {est.images.length} photos
                             </Badge>
                           )}
                         </div>
                       ) : (
-                        <div className="flex h-56 items-center justify-center bg-gradient-to-br from-[#193364] via-[#6C9772] to-[#FBE7BA]">
-                          <Icon className="h-14 w-14 text-white/70" strokeWidth={1.8} />
+                        <div className="public-neumorphic-inset flex h-56 items-center justify-center">
+                          <Icon className="h-14 w-14 text-[#6C9772]" strokeWidth={1.8} />
                         </div>
                       )}
                       <CardContent className="p-5">
@@ -991,7 +991,7 @@ export default function TourismHome() {
           )}
         </div>
 
-        <Card className="h-fit rounded-[2rem] border-[#AFB3B5] bg-white/92 shadow-[0_24px_80px_rgba(14,90,114,0.10)] backdrop-blur-xl lg:sticky lg:top-6">
+        <Card className="h-fit rounded-[2rem] border-[#AFB3B5] bg-[#E0E5EC] shadow-[9px_9px_16px_rgba(163,177,198,0.60),-9px_-9px_16px_rgba(255,255,255,0.55)] lg:sticky lg:top-6">
           <CardContent className="p-5">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
@@ -1037,7 +1037,7 @@ export default function TourismHome() {
                       <p className="font-semibold leading-5 text-slate-950">{est.name}</p>
                       <p className="mt-1 text-sm text-slate-500">{getPublicCategory(est.type, est.dot_classification)}</p>
                     </div>
-                    <Badge variant="outline" className="rounded-full border-[#AFB3B5] bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-sm">
+                    <Badge variant="outline" className="rounded-full border-[#AFB3B5] bg-[#F5F8FF] px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-[inset_3px_3px_7px_rgba(163,177,198,0.35),inset_-3px_-3px_7px_rgba(255,255,255,0.65)]">
                       {est.distance === null ? 'Use GPS' : `${est.distance.toFixed(1)} km route`}
                     </Badge>
                   </div>
@@ -1067,19 +1067,19 @@ export default function TourismHome() {
       </section>
 
       {selectedEstablishment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm" onClick={() => setSelectedEstablishment(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#193364]/35 p-4 backdrop-blur-sm" onClick={() => setSelectedEstablishment(null)}>
           <div className="relative w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               onClick={() => setSelectedEstablishment(null)}
-              className="absolute right-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-lg ring-1 ring-slate-900/10 transition hover:bg-white hover:text-slate-950"
+              className="absolute right-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-[#E0E5EC] text-slate-700 shadow-[5px_5px_10px_rgba(163,177,198,0.60),-5px_-5px_10px_rgba(255,255,255,0.52)] ring-1 ring-[#AFB3B5] transition hover:bg-[#F5F8FF] hover:text-slate-950"
               aria-label="Close establishment details"
             >
               <X className="h-5 w-5" strokeWidth={1.9} />
             </button>
-            <div className="max-h-[90dvh] overflow-y-auto rounded-[2rem] bg-white shadow-2xl">
+            <div className="max-h-[90dvh] overflow-y-auto rounded-[2rem] bg-[#E0E5EC] shadow-[12px_12px_28px_rgba(163,177,198,0.62),-8px_-8px_20px_rgba(255,255,255,0.58)]">
               {selectedPhotos.length > 0 ? (
-              <div className="bg-slate-950">
+              <div className="bg-[#193364]">
                 <div className="relative">
                   <img src={selectedPhoto} alt={`${selectedEstablishment.name} photo ${selectedPhotoIndex + 1}`} className="h-72 w-full object-cover sm:h-96" />
                   {selectedPhotos.length > 1 && (
@@ -1087,7 +1087,7 @@ export default function TourismHome() {
                       <button
                         type="button"
                         onClick={() => setSelectedPhotoIndex((current) => (current === 0 ? selectedPhotos.length - 1 : current - 1))}
-                        className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl font-semibold text-slate-900 shadow-lg transition hover:bg-white"
+                        className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-[#E0E5EC] text-xl font-semibold text-slate-900 shadow-lg transition hover:bg-[#F5F8FF]"
                         aria-label="Previous photo"
                       >
                         ‹
@@ -1095,12 +1095,12 @@ export default function TourismHome() {
                       <button
                         type="button"
                         onClick={() => setSelectedPhotoIndex((current) => (current + 1) % selectedPhotos.length)}
-                        className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl font-semibold text-slate-900 shadow-lg transition hover:bg-white"
+                        className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-[#E0E5EC] text-xl font-semibold text-slate-900 shadow-lg transition hover:bg-[#F5F8FF]"
                         aria-label="Next photo"
                       >
                         ›
                       </button>
-                      <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/75 px-3 py-1 text-xs font-semibold text-white shadow-lg">
+                      <span className="absolute bottom-3 right-3 rounded-full bg-[#193364]/75 px-3 py-1 text-xs font-semibold text-white shadow-lg">
                         {selectedPhotoIndex + 1} / {selectedPhotos.length}
                       </span>
                     </>
@@ -1123,8 +1123,8 @@ export default function TourismHome() {
                 )}
               </div>
             ) : (
-              <div className="flex h-56 items-center justify-center bg-gradient-to-br from-[#193364] via-[#6C9772] to-[#B88A52]">
-                {React.createElement(getCategoryIcon(selectedEstablishment.type), { className: 'h-14 w-14 text-white/70', strokeWidth: 1.8 })}
+              <div className="public-neumorphic-inset flex h-56 items-center justify-center">
+                {React.createElement(getCategoryIcon(selectedEstablishment.type), { className: 'h-14 w-14 text-[#6C9772]', strokeWidth: 1.8 })}
               </div>
             )}
             <div className="p-6 sm:p-8">
@@ -1160,8 +1160,8 @@ export default function TourismHome() {
                 )}
               </div>
 
-              <div className="mt-5 overflow-hidden rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF]">
-                <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="public-neumorphic-surface mt-5 overflow-hidden rounded-2xl p-1">
+                <div className="flex flex-col gap-3 rounded-xl p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="font-semibold text-slate-950">Location & Directions</h3>
                     <p className="mt-1 text-sm text-slate-600">
@@ -1184,7 +1184,7 @@ export default function TourismHome() {
                       onClick={() => setShowSelectedMap(true)}
                       variant="outline"
                       disabled={!hasExactLocation(selectedEstablishment)}
-                      className="rounded-2xl border-[#AFB3B5] bg-white px-4 py-2.5 text-sm font-semibold text-[#193364] shadow-none hover:bg-[#F5F8FF] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-2xl border-[#AFB3B5] bg-[#F5F8FF] px-4 py-2.5 text-sm font-semibold text-[#193364] shadow-none hover:bg-[#E5E8E1] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <MapPin className="h-4 w-4" strokeWidth={1.8} />
                       {hasExactLocation(selectedEstablishment) ? 'View map' : 'No exact pin'}
@@ -1204,7 +1204,7 @@ export default function TourismHome() {
 
               <Separator className="my-6 bg-[#AFB3B5]" />
 
-              <div className="rounded-2xl border border-cyan-100 bg-cyan-50/70 p-5">
+              <div className="public-neumorphic-inset rounded-2xl p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <h3 className="font-semibold leading-6 text-slate-950">Rate this establishment</h3>
@@ -1216,7 +1216,7 @@ export default function TourismHome() {
                         type="button"
                         onClick={() => setSelectedReviewRating(rating)}
                         disabled={submittingRating}
-                        className="rounded-full p-1 text-[#193364] transition hover:scale-110 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 sm:p-1.5"
+                        className="rounded-full p-1 text-[#193364] transition hover:scale-110 hover:bg-[#F5F8FF] disabled:cursor-not-allowed disabled:opacity-60 sm:p-1.5"
                         aria-label={`Rate ${rating} star${rating === 1 ? '' : 's'}`}
                       >
                         <Star
@@ -1235,15 +1235,15 @@ export default function TourismHome() {
                     placeholder="Your name"
                     aria-label="Your name"
                     required
-                    className="w-full rounded-2xl border border-cyan-100 bg-white p-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-4 focus:ring-[#6C9772]/25"
+                    className="w-full rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-4 focus:ring-[#6C9772]/25"
                   />
                   <textarea
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value.slice(0, 500))}
                     placeholder="Optional: tell others why you chose this rating"
-                    className="min-h-24 w-full rounded-2xl border border-cyan-100 bg-white p-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-4 focus:ring-[#6C9772]/25"
+                    className="min-h-24 w-full rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-4 focus:ring-[#6C9772]/25"
                   />
-                  <div className="rounded-2xl border border-dashed border-cyan-200 bg-white/70 p-3">
+                  <div className="rounded-2xl border border-dashed border-[#AFB3B5] bg-[#E5E8E1] p-3">
                     <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-[#193364]">
                       <ImagePlus className="h-4 w-4" />
                       Add a photo (optional)
@@ -1322,7 +1322,7 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
     : sortedReviews
 
   return (
-    <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+    <div className="public-neumorphic-surface mt-6 rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="text-lg font-semibold leading-6 text-slate-950 sm:text-base">Reviews & ratings</h3>
@@ -1412,7 +1412,7 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
 
       {expandedPhoto && (
         <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 p-4"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-[#193364]/90 p-4"
           role="dialog"
           aria-modal="true"
           aria-label="Expanded review photo"
@@ -1421,7 +1421,7 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
           <button
             type="button"
             onClick={() => setExpandedPhoto(null)}
-            className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg hover:bg-white focus:outline-none focus:ring-4 focus:ring-white/50"
+            className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#E0E5EC] text-slate-900 shadow-lg hover:bg-[#F5F8FF] focus:outline-none focus:ring-4 focus:ring-white/50"
             aria-label="Close expanded photo"
           >
             <span className="text-2xl leading-none">×</span>
@@ -1429,7 +1429,7 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
           <img
             src={expandedPhoto}
             alt="Expanded photo shared with this review"
-            className="max-h-[88vh] max-w-[94vw] rounded-2xl object-contain shadow-2xl"
+            className="max-h-[88vh] max-w-[94vw] rounded-2xl object-contain shadow-[12px_12px_28px_rgba(15,25,45,0.34),-8px_-8px_20px_rgba(255,255,255,0.14)]"
             onClick={(event) => event.stopPropagation()}
           />
         </div>
