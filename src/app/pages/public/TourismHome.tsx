@@ -972,7 +972,7 @@ export default function TourismHome() {
           </div>
 
           <Card className="public-neumorphic-soft-surface hidden rounded-[2rem] text-[#193364] lg:block">
-            <CardContent className="p-3">
+            <CardContent className="p-3 !pb-3">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium text-[#323232]">Personalized picks</p>
