@@ -941,7 +941,7 @@ export default function TourismHome() {
               <p className="text-slate-500">No resorts or hotels found. Try a different search.</p>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
               {filtered.map((est) => {
                 const Icon = getCategoryIcon(est.type, est.dot_classification)
                 const displayImage = est.images && est.images.length > 0 ? est.images[0] : null
@@ -953,7 +953,7 @@ export default function TourismHome() {
                   >
                     <button onClick={() => openDetails(est)} className="w-full text-left active:translate-y-[1px]">
                       {displayImage ? (
-                        <div className="relative h-56 overflow-hidden">
+                        <div className="relative h-36 overflow-hidden sm:h-56">
                           <img src={displayImage} alt={est.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                           {est.images.length > 1 && (
                             <Badge className="absolute bottom-3 right-3 rounded-full border-white/10 bg-[#193364]/75 px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-[#193364]/75">
@@ -962,24 +962,24 @@ export default function TourismHome() {
                           )}
                         </div>
                       ) : (
-                        <div className="public-neumorphic-inset flex h-56 items-center justify-center">
+                        <div className="public-neumorphic-inset flex h-36 items-center justify-center sm:h-56">
                           <Icon className="h-14 w-14 text-[#6C9772]" strokeWidth={1.8} />
                         </div>
                       )}
-                      <CardContent className="p-5">
+                      <CardContent className="p-3 sm:p-5">
                         <div className="mb-3 flex items-start justify-between gap-3">
-                          <h3 className="text-lg font-semibold leading-6 tracking-[-0.02em] text-slate-950">{est.name}</h3>
+                          <h3 className="text-sm font-semibold leading-5 tracking-[-0.02em] text-slate-950 sm:text-lg sm:leading-6">{est.name}</h3>
                           <Badge className="shrink-0 rounded-full bg-[#E5E8E1] px-3 py-1 text-xs font-semibold text-[#193364] shadow-none hover:bg-[#E5E8E1]">
                             {publicCategory}
                           </Badge>
                         </div>
                         <RatingDisplay summary={ratingSummaries[est.id]} className="mb-3" />
-                        <div className="flex items-start gap-2 text-sm leading-5 text-slate-600">
+                        <div className="flex items-start gap-1.5 text-xs leading-4 text-slate-600 sm:gap-2 sm:text-sm sm:leading-5">
                           <MapPin className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.8} />
                           <span>{est.address}</span>
                         </div>
-                        {est.description && <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">{est.description}</p>}
-                        <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#193364]">
+                        {est.description && <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600 sm:mt-3 sm:text-sm sm:leading-6">{est.description}</p>}
+                                                <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#193364] sm:mt-4 sm:text-sm">
                           View details <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" strokeWidth={1.8} />
                         </span>
                       </CardContent>
@@ -992,7 +992,7 @@ export default function TourismHome() {
         </div>
 
         <Card className="h-fit rounded-[2rem] border-[#AFB3B5] bg-[#E0E5EC] shadow-[9px_9px_16px_rgba(163,177,198,0.60),-9px_-9px_16px_rgba(255,255,255,0.55)] lg:sticky lg:top-6">
-          <CardContent className="p-5">
+          <CardContent className="p-3 sm:p-5">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-slate-500">Nearest picks</p>
