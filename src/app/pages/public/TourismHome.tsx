@@ -938,7 +938,7 @@ export default function TourismHome() {
             <p className="mt-5 max-w-xl text-base leading-7 text-[#323232] sm:text-lg">
               Browse verified resorts and hotels, compare ratings, and view every uploaded listing photo.
             </p>
-            <Card className="public-neumorphic-surface mt-8 overflow-hidden rounded-[1.5rem] border-[#AFB3B5] p-3 text-[#193364]">
+            <Card className="public-neumorphic-surface mt-8 flex-col gap-0 overflow-hidden rounded-[1.5rem] border-[#AFB3B5] p-3 text-[#193364]">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-[#6C7895]" />
                 <Input
