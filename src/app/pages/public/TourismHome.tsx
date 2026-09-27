@@ -61,7 +61,6 @@ interface RatingSummary {
   breakdown: RatingBreakdown
   commentCount: number
   visitorRating?: number
-  localOnly?: boolean
 }
 
 interface RatingReview {
@@ -71,13 +70,6 @@ interface RatingReview {
   reviewer_name: string | null
   created_at: string
   photo_path?: string | null
-}
-
-interface LocalRating {
-  rating: number
-  comment?: string
-  reviewerName?: string
-  createdAt?: string
 }
 
 interface UserLocation {
@@ -93,7 +85,8 @@ interface BehaviorProfile {
 
 const BEHAVIOR_KEY = 'vistabalayan_public_behavior_v1'
 const RATING_VISITOR_KEY = 'vistabalayan_public_rating_visitor_v1'
-const LOCAL_RATINGS_KEY = 'vistabalayan_public_local_ratings_v1'
+const REVIEWER_NAME_KEY = 'vistabalayan_public_reviewer_name_v1'
+const LEGACY_LOCAL_RATINGS_KEY = 'vistabalayan_public_local_ratings_v1'
 const LEGACY_REVIEW_PREFIX = 'Reviewed by '
 const emptyBreakdown: RatingBreakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
 
@@ -227,44 +220,16 @@ const getRatingVisitorToken = () => {
   return token
 }
 
-const normalizeLocalRating = (value: unknown): LocalRating | null => {
-  if (typeof value === 'number' && value >= 1 && value <= 5) {
-    return { rating: value }
-  }
-  if (value && typeof value === 'object') {
-    const review = value as Partial<LocalRating>
-    if (typeof review.rating === 'number' && review.rating >= 1 && review.rating <= 5) {
-      return {
-        rating: review.rating,
-        comment: typeof review.comment === 'string' ? review.comment : '',
-        reviewerName: typeof review.reviewerName === 'string' ? review.reviewerName : '',
-        createdAt: typeof review.createdAt === 'string' ? review.createdAt : undefined,
-      }
-    }
-  }
-  return null
+const readReviewerName = () => {
+  if (typeof window === 'undefined') return ''
+  window.localStorage.removeItem(LEGACY_LOCAL_RATINGS_KEY)
+  return window.localStorage.getItem(REVIEWER_NAME_KEY)?.trim() || ''
 }
 
-const readLocalRatings = (): Record<string, LocalRating> => {
-  if (typeof window === 'undefined') return {}
-  try {
-    const stored = window.localStorage.getItem(LOCAL_RATINGS_KEY)
-    const parsed = stored ? JSON.parse(stored) : {}
-    return Object.entries(parsed).reduce<Record<string, LocalRating>>((acc, [id, value]) => {
-      const rating = normalizeLocalRating(value)
-      if (rating) acc[id] = rating
-      return acc
-    }, {})
-  } catch {
-    return {}
-  }
-}
-
-const saveLocalRating = (establishmentId: string, rating: number, comment: string, reviewerName: string) => {
+const saveReviewerName = (name: string) => {
   if (typeof window === 'undefined') return
-  const ratings = readLocalRatings()
-  ratings[establishmentId] = { rating, comment: comment.trim(), reviewerName: reviewerName.trim(), createdAt: new Date().toISOString() }
-  window.localStorage.setItem(LOCAL_RATINGS_KEY, JSON.stringify(ratings))
+  const trimmedName = name.trim()
+  if (trimmedName) window.localStorage.setItem(REVIEWER_NAME_KEY, trimmedName)
 }
 
 const buildLegacyReviewComment = (reviewerName: string, comment: string) => {
@@ -306,24 +271,6 @@ const sortReviewsForDisplay = (reviews: RatingReview[]) => {
   })
 }
 
-const getLocalRatingSummaries = (establishmentIds: string[]) => {
-  const localRatings = readLocalRatings()
-  return establishmentIds.reduce<Record<string, RatingSummary>>((acc, id) => {
-    const localReview = localRatings[id]
-    if (localReview) {
-      acc[id] = {
-        average: localReview.rating,
-        count: 1,
-        breakdown: { ...emptyBreakdown, [localReview.rating]: 1 },
-        commentCount: localReview.comment?.trim() ? 1 : 0,
-        visitorRating: localReview.rating,
-        localOnly: true,
-      }
-    }
-    return acc
-  }, {})
-}
-
 const summarizeRatings = (ratings: Array<{ establishment_id: string; average_rating: number; rating_count: number; one_star_count?: number; two_star_count?: number; three_star_count?: number; four_star_count?: number; five_star_count?: number; comment_count?: number }>) => {
   return ratings.reduce<Record<string, RatingSummary>>((acc, item) => {
     if (!item.establishment_id || typeof item.average_rating !== 'number') return acc
@@ -342,26 +289,6 @@ const summarizeRatings = (ratings: Array<{ establishment_id: string; average_rat
     }
     return acc
   }, {})
-}
-
-const applyLocalVisitorRatings = (summaries: Record<string, RatingSummary>, establishmentIds: string[]) => {
-  const localRatings = readLocalRatings()
-  return establishmentIds.reduce<Record<string, RatingSummary>>((acc, id) => {
-    const localReview = localRatings[id]
-    if (localReview) {
-      acc[id] = {
-        ...(acc[id] || {
-          average: localReview.rating,
-          count: 1,
-          breakdown: { ...emptyBreakdown, [localReview.rating]: 1 },
-          commentCount: localReview.comment?.trim() ? 1 : 0,
-          localOnly: true,
-        }),
-        visitorRating: localReview.rating,
-      }
-    }
-    return acc
-  }, { ...summaries })
 }
 
 const PUBLIC_LISTING_REAL_PHOTOS: Record<string, string[]> = {
@@ -413,7 +340,7 @@ export default function TourismHome() {
   const [submittingRating, setSubmittingRating] = useState(false)
   const [ratingMessage, setRatingMessage] = useState('')
   const [selectedReviewRating, setSelectedReviewRating] = useState(0)
-  const [reviewerName, setReviewerName] = useState('')
+  const [reviewerName, setReviewerName] = useState(readReviewerName())
   const [reviewComment, setReviewComment] = useState('')
   const [reviewPhoto, setReviewPhoto] = useState<File | null>(null)
   const [reviewPhotoPreview, setReviewPhotoPreview] = useState('')
@@ -595,12 +522,7 @@ export default function TourismHome() {
     if (!error && data) {
       setRatingSummaries((current) => ({
         ...current,
-        ...applyLocalVisitorRatings(summarizeRatings(data), establishmentIds),
-      }))
-    } else {
-      setRatingSummaries((current) => ({
-        ...current,
-        ...getLocalRatingSummaries(establishmentIds),
+        ...summarizeRatings(data),
       }))
     }
   }
@@ -626,14 +548,6 @@ export default function TourismHome() {
 
     if (!error && data) {
       setRatingReviews((current) => ({ ...current, [establishmentId]: sortReviewsForDisplay(data) }))
-    } else {
-      const localReview = readLocalRatings()[establishmentId]
-      if (localReview) {
-        setRatingReviews((current) => ({
-          ...current,
-          [establishmentId]: sortReviewsForDisplay([{ establishment_id: establishmentId, rating: localReview.rating, comment: localReview.comment || null, reviewer_name: localReview.reviewerName || null, created_at: localReview.createdAt || new Date().toISOString() }]),
-        }))
-      }
     }
   }
 
@@ -685,25 +599,12 @@ export default function TourismHome() {
       p_photo_path: photoPath,
     })
 
-    saveLocalRating(selectedEstablishment.id, selectedReviewRating, comment, name)
+    saveReviewerName(name)
 
     if (error) {
-      setRatingSummaries((current) => ({
-        ...current,
-        [selectedEstablishment.id]: {
-          average: current[selectedEstablishment.id]?.average || selectedReviewRating,
-          count: current[selectedEstablishment.id]?.count || 1,
-          breakdown: current[selectedEstablishment.id]?.breakdown || { ...emptyBreakdown, [selectedReviewRating]: 1 },
-          commentCount: current[selectedEstablishment.id]?.commentCount || (comment ? 1 : 0),
-          visitorRating: selectedReviewRating,
-          localOnly: true,
-        },
-      }))
-      setRatingMessage('Database setup is still pending, so this rating was saved on this device only and will not appear on other browsers yet.')
-      await fetchRatingReviews(selectedEstablishment.id)
+      setRatingMessage('Your review could not be saved. Please try again.')
     } else {
       setRatingMessage('Thanks, your review was saved with your name.')
-      setReviewerName('')
       setReviewComment('')
       setReviewPhoto(null)
       setReviewPhotoPreview('')
@@ -774,10 +675,9 @@ export default function TourismHome() {
     setSelectedPhotoIndex(0)
     setShowSelectedMap(false)
     setRatingMessage('')
-    const localReview = readLocalRatings()[establishment.id]
-    setSelectedReviewRating(localReview?.rating || ratingSummaries[establishment.id]?.visitorRating || 0)
-    setReviewerName(localReview?.reviewerName || '')
-    setReviewComment(localReview?.comment || '')
+    setSelectedReviewRating(ratingSummaries[establishment.id]?.visitorRating || 0)
+    setReviewerName(readReviewerName())
+    setReviewComment('')
     fetchRatingReviews(establishment.id)
     const next = {
       ...behavior,
@@ -1563,7 +1463,6 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
         <div className="min-w-0 flex-1">
           <h3 className="text-lg font-semibold leading-6 text-slate-950 sm:text-base">Reviews & ratings</h3>
           <p className="mt-1 text-sm leading-5 text-slate-600">{summary.count} total review{summary.count === 1 ? '' : 's'} · {summary.commentCount} with comment{summary.commentCount === 1 ? '' : 's'}</p>
-          {summary.localOnly && <p className="mt-1 text-xs font-medium text-amber-700">Saved on this device only until database setup is completed.</p>}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {selectedRating > 0 && (
@@ -1685,7 +1584,7 @@ function RatingDisplay({ summary, className = '' }: { summary?: RatingSummary; c
           <Star key={star} className={`h-4 w-4 ${star <= rounded ? 'fill-[#193364]' : 'fill-slate-100'}`} strokeWidth={1.8} />
         ))}
       </div>
-      <span>{rating.localOnly ? 'Saved on this device only' : rating.count > 0 ? `${rating.average.toFixed(1)} (${rating.count})` : '(0)'}</span>
+      <span>{rating.count > 0 ? `${rating.average.toFixed(1)} (${rating.count})` : '(0)'}</span>
     </div>
   )
 }
