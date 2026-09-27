@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Bed,
   Building2,
@@ -106,6 +106,8 @@ const categories = [
   { id: 'Resort', name: 'Resorts', icon: Hotel },
   { id: 'Hotel', name: 'Hotels', icon: Building2 },
 ]
+
+const LISTING_PAGE_SIZE = 12
 
 const emptyBehavior: BehaviorProfile = {
   viewedIds: [],
@@ -421,6 +423,16 @@ export default function TourismHome() {
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'ready' | 'blocked'>('idle')
   const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [showSelectedMap, setShowSelectedMap] = useState(false)
+  const [hasMoreListings, setHasMoreListings] = useState(true)
+  const [loadingMoreListings, setLoadingMoreListings] = useState(false)
+  const [listingLoadError, setListingLoadError] = useState('')
+  const [autoLoadAvailable, setAutoLoadAvailable] = useState(true)
+  const listingPageRef = useRef(0)
+  const listingLoadingRef = useRef(false)
+  const listingHasMoreRef = useRef(true)
+  const listingSentinelRef = useRef<HTMLDivElement | null>(null)
+  const fetchMoreListingsRef = useRef<() => void>(() => undefined)
+  const filtersInitializedRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -485,22 +497,82 @@ export default function TourismHome() {
     fetchEstablishments(visitorToken)
   }, [])
 
-  const fetchEstablishments = async (visitorToken = ratingVisitorToken) => {
-    setLoading(true)
-    const { data, error } = await supabase
+  const fetchEstablishments = async (visitorToken = ratingVisitorToken, reset = false) => {
+    if (listingLoadingRef.current || (!reset && !listingHasMoreRef.current)) return
+
+    listingLoadingRef.current = true
+    setListingLoadError('')
+    if (reset) {
+      listingPageRef.current = 0
+      listingHasMoreRef.current = true
+      setHasMoreListings(true)
+      setLoading(true)
+    } else {
+      setLoadingMoreListings(true)
+    }
+
+    const page = reset ? 0 : listingPageRef.current
+    const from = page * LISTING_PAGE_SIZE
+    const to = from + LISTING_PAGE_SIZE - 1
+    let query = supabase
       .from('establishments')
       .select('*')
       .eq('status', 'active')
       .order('name')
+      .order('id')
+      .range(from, to)
 
-    if (!error && data) {
-      const publicStays = data.filter((est) => getPublicCategory(est.type, est.dot_classification)).map(replaceGenericListingPhotos)
-      setEstablishments(publicStays)
-      setFiltered(publicStays)
-      await fetchRatingSummaries(publicStays.map((est) => est.id), visitorToken)
+    const safeSearch = searchTerm.trim().replace(/[(),]/g, ' ')
+    if (safeSearch) {
+      query = query.or(`name.ilike.%${safeSearch}%,address.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%,type.ilike.%${safeSearch}%,dot_classification.ilike.%${safeSearch}%`)
     }
+
+    const { data, error } = await query
+    if (error) {
+      setListingLoadError('More listings could not be loaded. Please try again.')
+      listingLoadingRef.current = false
+      setLoading(false)
+      setLoadingMoreListings(false)
+      return
+    }
+
+    const publicStays = (data || [])
+      .filter((est) => getPublicCategory(est.type, est.dot_classification))
+      .map(replaceGenericListingPhotos)
+    const nextHasMore = (data || []).length === LISTING_PAGE_SIZE
+    listingPageRef.current = page + 1
+    listingHasMoreRef.current = nextHasMore
+    setHasMoreListings(nextHasMore)
+    setEstablishments((current) => {
+      if (reset) return publicStays
+      const existingIds = new Set(current.map((est) => est.id))
+      return [...current, ...publicStays.filter((est) => !existingIds.has(est.id))]
+    })
+    await fetchRatingSummaries(publicStays.map((est) => est.id), visitorToken)
+
+    listingLoadingRef.current = false
     setLoading(false)
+    setLoadingMoreListings(false)
   }
+
+  fetchMoreListingsRef.current = () => {
+    void fetchEstablishments(ratingVisitorToken, false)
+  }
+
+  useEffect(() => {
+    const supported = typeof window !== 'undefined' && 'IntersectionObserver' in window
+    setAutoLoadAvailable(supported)
+    if (!supported || !listingSentinelRef.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) fetchMoreListingsRef.current()
+      },
+      { rootMargin: '500px 0px' }
+    )
+    observer.observe(listingSentinelRef.current)
+    return () => observer.disconnect()
+  }, [])
 
   const fetchRatingSummaries = async (establishmentIds: string[], visitorToken = ratingVisitorToken) => {
     if (establishmentIds.length === 0) return
@@ -511,9 +583,15 @@ export default function TourismHome() {
       .in('establishment_id', establishmentIds)
 
     if (!error && data) {
-      setRatingSummaries(applyLocalVisitorRatings(summarizeRatings(data), establishmentIds))
+      setRatingSummaries((current) => ({
+        ...current,
+        ...applyLocalVisitorRatings(summarizeRatings(data), establishmentIds),
+      }))
     } else {
-      setRatingSummaries(getLocalRatingSummaries(establishmentIds))
+      setRatingSummaries((current) => ({
+        ...current,
+        ...getLocalRatingSummaries(establishmentIds),
+      }))
     }
   }
 
@@ -642,6 +720,18 @@ export default function TourismHome() {
     }
     setFiltered(results)
   }, [searchTerm, selectedType, establishments])
+
+  useEffect(() => {
+    if (!filtersInitializedRef.current) {
+      filtersInitializedRef.current = true
+      return
+    }
+
+    const handle = window.setTimeout(() => {
+      void fetchEstablishments(ratingVisitorToken, true)
+    }, 250)
+    return () => window.clearTimeout(handle)
+  }, [searchTerm, selectedType])
 
   useEffect(() => {
     if (!searchTerm.trim()) return
@@ -988,6 +1078,25 @@ export default function TourismHome() {
                 )
               })}
             </div>
+          )}
+          <div ref={listingSentinelRef} className="h-1" aria-hidden="true" />
+          {loadingMoreListings && (
+            <p className="py-6 text-center text-sm font-medium text-slate-500" role="status">Loading more establishments...</p>
+          )}
+          {hasMoreListings && (listingLoadError || !autoLoadAvailable) && !loadingMoreListings && (
+            <div className="flex flex-col items-center gap-3 py-6">
+              {listingLoadError && <p className="text-center text-sm text-rose-700" role="alert">{listingLoadError}</p>}
+              <Button
+                type="button"
+                onClick={() => fetchMoreListingsRef.current()}
+                className="rounded-2xl bg-[#193364] px-5 py-2.5 text-sm font-semibold text-white shadow-[5px_5px_10px_rgba(163,177,198,0.60),-5px_-5px_10px_rgba(255,255,255,0.52)] hover:bg-[#193364]"
+              >
+                {listingLoadError ? 'Retry loading establishments' : 'Load more establishments'}
+              </Button>
+            </div>
+          )}
+          {!hasMoreListings && establishments.length > 0 && (
+            <p className="py-6 text-center text-xs font-medium text-slate-500">You have reached the end of the listings.</p>
           )}
         </div>
 
