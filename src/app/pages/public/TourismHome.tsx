@@ -976,7 +976,7 @@ export default function TourismHome() {
                         <RatingDisplay summary={ratingSummaries[est.id]} className="mb-3" />
                         <div className="flex items-start gap-1.5 text-xs leading-4 text-slate-600 sm:gap-2 sm:text-sm sm:leading-5">
                           <MapPin className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.8} />
-                          <span>{est.address}</span>
+                          <span className="min-w-0 truncate whitespace-nowrap" title={est.address}>{est.address}</span>
                         </div>
                         {est.description && <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600 sm:mt-3 sm:text-sm sm:leading-6">{est.description}</p>}
                                                 <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#193364] sm:mt-4 sm:text-sm">
