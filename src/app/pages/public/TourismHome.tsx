@@ -1087,7 +1087,7 @@ export default function TourismHome() {
                       )}
                       <CardContent className="p-3 sm:p-5">
                         <div className="mb-3 flex items-start justify-between gap-3">
-                          <h3 className="text-sm font-semibold leading-5 tracking-[-0.02em] text-slate-950 sm:text-lg sm:leading-6">{est.name}</h3>
+                          <h3 className="line-clamp-2 text-sm font-semibold leading-5 tracking-[-0.02em] text-slate-950 sm:text-lg sm:leading-6">{est.name}</h3>
                           <Badge className="shrink-0 rounded-full bg-[#E5E8E1] px-3 py-1 text-xs font-semibold text-[#193364] shadow-none hover:bg-[#E5E8E1]">
                             {publicCategory}
                           </Badge>
