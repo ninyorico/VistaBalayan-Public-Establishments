@@ -936,7 +936,7 @@ export default function TourismHome() {
             <p className="mt-5 max-w-xl text-base leading-7 text-white/95 drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)] sm:text-lg">
               Browse verified resorts and hotels, compare ratings, and view every uploaded listing photo.
             </p>
-            <Card className="public-neumorphic-surface mt-8 flex-col gap-0 overflow-hidden rounded-[1.5rem] border-[#AFB3B5] p-3 text-[#193364]">
+            <Card className="public-neumorphic-soft-surface mt-8 flex-col gap-0 overflow-hidden rounded-[1.5rem] border-[#AFB3B5] p-3 text-[#193364]">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-[#6C7895]" />
                 <Input
@@ -944,7 +944,7 @@ export default function TourismHome() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search resort, hotel, address, pool, beach, or amenity"
-                  className="h-14 rounded-[1.25rem] border border-[#AFB3B5] bg-[#E0E5EC] pl-12 pr-4 text-base text-[#193364] shadow-[inset_4px_4px_9px_rgba(163,177,198,0.38),inset_-4px_-4px_9px_rgba(255,255,255,0.70)] placeholder:text-[#6C7895] focus-visible:border-[#193364]/45 focus-visible:ring-2 focus-visible:ring-[#193364]/20"
+                  className="h-14 rounded-[1.25rem] border border-[#AFB3B5] bg-[#E0E5EC] pl-12 pr-4 text-base text-[#193364] shadow-[inset_3px_3px_6px_rgba(163,177,198,0.30),inset_-3px_-3px_6px_rgba(255,255,255,0.55)] placeholder:text-[#6C7895] focus-visible:border-[#193364]/45 focus-visible:ring-2 focus-visible:ring-[#193364]/20"
                 />
               </div>
               <div className="mt-1 grid grid-cols-2 gap-2 lg:hidden">
@@ -971,7 +971,7 @@ export default function TourismHome() {
             </Card>
           </div>
 
-          <Card className="public-neumorphic-surface hidden rounded-[2rem] text-[#193364] lg:block">
+          <Card className="public-neumorphic-soft-surface hidden rounded-[2rem] text-[#193364] lg:block">
             <CardContent className="p-5 sm:p-6">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
