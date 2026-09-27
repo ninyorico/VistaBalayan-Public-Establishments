@@ -422,6 +422,7 @@ export default function TourismHome() {
   const [routeDistances, setRouteDistances] = useState<Record<string, number>>({})
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'ready' | 'blocked'>('idle')
   const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const [mobileDiscoveryPanel, setMobileDiscoveryPanel] = useState<'recommendations' | 'nearest' | null>(null)
   const [showSelectedMap, setShowSelectedMap] = useState(false)
   const [hasMoreListings, setHasMoreListings] = useState(true)
   const [loadingMoreListings, setLoadingMoreListings] = useState(false)
@@ -433,6 +434,15 @@ export default function TourismHome() {
   const listingSentinelRef = useRef<HTMLDivElement | null>(null)
   const fetchMoreListingsRef = useRef<() => void>(() => undefined)
   const filtersInitializedRef = useRef(false)
+
+  useEffect(() => {
+    if (!mobileDiscoveryPanel) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileDiscoveryPanel(null)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [mobileDiscoveryPanel])
 
   useEffect(() => {
     let cancelled = false
@@ -916,7 +926,7 @@ export default function TourismHome() {
           />
         )}
         <div className="absolute inset-0 bg-[#E0E5EC]/88" />
-        <div className="relative mx-auto grid min-h-[76dvh] max-w-7xl grid-cols-1 items-center gap-8 px-5 py-10 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:px-8">
+        <div className="relative mx-auto grid min-h-0 max-w-7xl grid-cols-1 items-center gap-8 px-5 py-10 sm:px-6 lg:min-h-[76dvh] lg:grid-cols-[1.02fr_0.98fr] lg:px-8">
           <div className="max-w-2xl">
             <Badge className="mb-5 rounded-full border-[#AFB3B5] bg-[#E5E8E1] px-4 py-2 text-sm font-medium text-[#193364] shadow-[inset_3px_3px_7px_rgba(163,177,198,0.35),inset_-3px_-3px_7px_rgba(255,255,255,0.65)] hover:bg-[#E5E8E1]">
               <Sparkles className="h-4 w-4" strokeWidth={1.8} />
@@ -939,10 +949,31 @@ export default function TourismHome() {
                   className="public-neumorphic-inset h-14 rounded-[1.1rem] border-0 pl-12 pr-4 text-base text-[#193364] shadow-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-[#193364]/25"
                 />
               </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 lg:hidden">
+                <Button
+                  type="button"
+                  onClick={() => setMobileDiscoveryPanel('nearest')}
+                  aria-label="Show destinations near me"
+                  className="h-11 justify-center rounded-2xl bg-[#193364] px-3 text-sm font-semibold text-white shadow-[5px_5px_10px_rgba(163,177,198,0.60),-5px_-5px_10px_rgba(255,255,255,0.52)] hover:bg-[#193364] active:translate-y-[1px]"
+                >
+                  <Navigation className="h-4 w-4" strokeWidth={1.8} />
+                  Near me
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setMobileDiscoveryPanel('recommendations')}
+                  aria-expanded={mobileDiscoveryPanel === 'recommendations'}
+                  aria-label="Show personalized picks"
+                  className="h-11 justify-center rounded-2xl bg-[#E5E8E1] px-3 text-sm font-semibold text-[#193364] shadow-[inset_3px_3px_7px_rgba(163,177,198,0.35),inset_-3px_-3px_7px_rgba(255,255,255,0.65)] hover:bg-[#F5F8FF] active:translate-y-[1px]"
+                >
+                  <Sparkles className="h-4 w-4" strokeWidth={1.8} />
+                  For you
+                </Button>
+              </div>
             </Card>
           </div>
 
-          <Card className="public-neumorphic-surface rounded-[2rem] text-[#193364]">
+          <Card className="public-neumorphic-surface hidden rounded-[2rem] text-[#193364] lg:block">
             <CardContent className="p-5 sm:p-6">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
@@ -1100,7 +1131,7 @@ export default function TourismHome() {
           )}
         </div>
 
-        <Card className="h-fit rounded-[2rem] border-[#AFB3B5] bg-[#E0E5EC] shadow-[9px_9px_16px_rgba(163,177,198,0.60),-9px_-9px_16px_rgba(255,255,255,0.55)] lg:sticky lg:top-6">
+        <Card className="hidden h-fit rounded-[2rem] border-[#AFB3B5] bg-[#E0E5EC] shadow-[9px_9px_16px_rgba(163,177,198,0.60),-9px_-9px_16px_rgba(255,255,255,0.55)] lg:sticky lg:top-6 lg:block">
           <CardContent className="p-3 sm:p-5">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
@@ -1174,6 +1205,104 @@ export default function TourismHome() {
           </CardContent>
         </Card>
       </section>
+
+      {mobileDiscoveryPanel && (
+        <div
+          className="fixed inset-0 z-40 flex items-end bg-[#193364]/35 p-3 backdrop-blur-sm lg:hidden"
+          role="presentation"
+          onClick={() => setMobileDiscoveryPanel(null)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-discovery-title"
+            className="max-h-[85dvh] w-full overflow-y-auto rounded-[1.75rem] bg-[#E0E5EC] p-4 text-[#193364] shadow-[0_-12px_30px_rgba(25,51,100,0.22)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">VistaBalayan discovery</p>
+                <h2 id="mobile-discovery-title" className="mt-1 text-2xl font-semibold tracking-[-0.025em]">
+                  {mobileDiscoveryPanel === 'nearest' ? (userLocation ? 'Close to you' : 'Nearby stays') : 'Where to stay next'}
+                </h2>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                aria-label="Close discovery panel"
+                onClick={() => setMobileDiscoveryPanel(null)}
+                className="h-10 w-10 shrink-0 rounded-full border-[#AFB3B5] bg-[#E5E8E1] p-0 text-[#193364] shadow-none hover:bg-[#F5F8FF]"
+              >
+                <X className="h-5 w-5" strokeWidth={1.8} />
+              </Button>
+            </div>
+
+            {mobileDiscoveryPanel === 'recommendations' ? (
+              <div className="space-y-3">
+                <p className="text-sm leading-5 text-slate-600">Personalized suggestions based on your browsing pattern and travel interests.</p>
+                {recommendations.map((est) => (
+                  <button
+                    key={est.id}
+                    type="button"
+                    onClick={() => { setMobileDiscoveryPanel(null); openDetails(est) }}
+                    className="w-full rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-4 text-left transition hover:bg-[#F5F8FF] active:translate-y-[1px]"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="public-neumorphic-inset mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[#193364]">
+                        {React.createElement(getCategoryIcon(est.type), { className: 'h-5 w-5', strokeWidth: 1.8 })}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-[#193364]">{est.name}</p>
+                        <p className="mt-1 text-sm leading-5 text-[#323232]">{est.reason}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm leading-5 text-slate-600">
+                  {userLocation ? 'Showing the closest destinations using routed road estimates when available.' : 'Allow location access to sort destinations by distance from you.'}
+                </p>
+                {nearestStays.map((est) => (
+                  <button
+                    key={est.id}
+                    type="button"
+                    onClick={() => { setMobileDiscoveryPanel(null); openDetails(est) }}
+                    className="w-full rounded-2xl border border-[#AFB3B5]/70 bg-[#F5F8FF] p-4 text-left transition hover:bg-[#E5E8E1] active:translate-y-[1px]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold leading-5 text-slate-950">{est.name}</p>
+                        <p className="mt-1 text-sm text-slate-500">{getPublicCategory(est.type, est.dot_classification)}</p>
+                      </div>
+                      <Badge variant="outline" className="shrink-0 rounded-full border-[#AFB3B5] bg-[#F5F8FF] px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-none">
+                        {est.distance === null ? 'Use GPS' : `${est.distance.toFixed(1)} km route`}
+                      </Badge>
+                    </div>
+                  </button>
+                ))}
+                {(locationStatus !== 'ready' || routeStatus === 'error') && (
+                  <Button
+                    type="button"
+                    onClick={requestLocation}
+                    disabled={locationStatus === 'loading'}
+                    className="mt-2 w-full rounded-2xl bg-[#193364] py-3 text-sm font-semibold text-white shadow-[5px_5px_10px_rgba(163,177,198,0.60),-5px_-5px_10px_rgba(255,255,255,0.52)] hover:bg-[#193364] disabled:cursor-wait disabled:opacity-80"
+                  >
+                    {locationStatus === 'loading' && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />}
+                    {locationStatus === 'loading' ? 'Getting phone location...' : routeStatus === 'error' ? 'Retry GPS distance' : 'Use my location'}
+                  </Button>
+                )}
+                {locationStatus === 'blocked' && (
+                  <p className="rounded-2xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">
+                    Location access is blocked. Allow location for this website, then try again.
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
+      )}
 
       {selectedEstablishment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#193364]/35 p-4 backdrop-blur-sm" onClick={() => setSelectedEstablishment(null)}>
