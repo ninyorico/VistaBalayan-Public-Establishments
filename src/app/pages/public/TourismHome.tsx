@@ -307,11 +307,25 @@ const normalizeListingImages = (value: unknown): string[] => {
     }
   }
 
-  return candidates.filter((image): image is string => {
+  return Array.from(new Set(candidates.filter((image): image is string => {
     if (typeof image !== 'string' || !image.trim()) return false
     const normalized = image.trim()
-    return !normalized.includes('lh3.googleusercontent.com')
-  })
+    if (normalized.startsWith('data:image/')) return true
+    try {
+      const parsed = new URL(normalized)
+      return parsed.protocol === 'https:' || parsed.protocol === 'http:'
+    } catch {
+      return false
+    }
+  }).map((image) => image.trim())))
+}
+
+const ListingPhoto = ({ sources, alt, className }: { sources: string[]; alt: string; className: string }) => {
+  const [sourceIndex, setSourceIndex] = React.useState(0)
+  React.useEffect(() => setSourceIndex(0), [sources])
+  const source = sources[sourceIndex]
+  if (!source) return null
+  return <img src={source} alt={alt} className={className} referrerPolicy="no-referrer" onError={() => setSourceIndex((current) => current + 1)} />
 }
 
 const normalizePublicEstablishment = (establishment: Establishment): Establishment => ({
@@ -885,7 +899,7 @@ export default function TourismHome() {
                     <button onClick={() => openDetails(est)} className="w-full text-left active:translate-y-[1px]">
                       {displayImage ? (
                         <div className="relative h-36 overflow-hidden sm:h-56">
-                          <img src={displayImage} alt={est.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                          <ListingPhoto sources={est.images} alt={est.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                           {est.images.length > 1 && (
                             <Badge className="absolute bottom-3 right-3 rounded-full border-white/10 bg-[#193364]/75 px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-[#193364]/75">
                               {est.images.length} photos
