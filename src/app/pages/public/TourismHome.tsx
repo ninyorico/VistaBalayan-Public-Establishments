@@ -913,7 +913,7 @@ export default function TourismHome() {
                       )}
                       <CardContent className="flex w-full flex-1 flex-col p-3 sm:p-5">
                         <div className="mb-3 flex items-start justify-between gap-3">
-                          <h3 className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 tracking-[-0.02em] text-slate-950 sm:min-h-12 sm:text-lg sm:leading-6">{est.name}</h3>
+                          <h3 className="min-w-0 line-clamp-2 min-h-10 break-words text-sm font-semibold leading-5 tracking-[-0.02em] text-slate-950 sm:min-h-12 sm:text-lg sm:leading-6">{est.name}</h3>
                           <Badge className="shrink-0 rounded-full bg-[#E5E8E1] px-3 py-1 text-xs font-semibold text-[#193364] shadow-none hover:bg-[#E5E8E1]">
                             {publicCategory}
                           </Badge>
@@ -921,7 +921,7 @@ export default function TourismHome() {
                         <RatingDisplay summary={ratingSummaries[est.id]} className="mb-3" />
                         <div className="flex items-start gap-1.5 text-xs leading-4 text-slate-600 sm:gap-2 sm:text-sm sm:leading-5">
                           <MapPin className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.8} />
-                          <span className="min-w-0 truncate whitespace-nowrap" title={est.address}>{est.address}</span>
+                          <span className="min-w-0 flex-1 break-words" title={est.address}>{est.address}</span>
                         </div>
                         <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-semibold text-[#193364] sm:pt-4 sm:text-sm">
                           View details <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" strokeWidth={1.8} />
@@ -1175,7 +1175,7 @@ export default function TourismHome() {
                   <Badge className="mb-3 rounded-full bg-[#E5E8E1] px-3 py-1 text-xs font-semibold text-[#193364] shadow-none hover:bg-[#E5E8E1]">
                     {getPublicCategory(selectedEstablishment.type)}
                   </Badge>
-                  <h2 className="text-3xl font-semibold tracking-[-0.035em] text-slate-950">{selectedEstablishment.name}</h2>
+                  <h2 className="min-w-0 break-words text-3xl font-semibold tracking-[-0.035em] text-slate-950">{selectedEstablishment.name}</h2>
                 </div>
                 <div className="rounded-full bg-[#F5F8FF] px-3 py-2">
                   <RatingDisplay summary={selectedRating} />
@@ -1185,7 +1185,7 @@ export default function TourismHome() {
               {selectedEstablishment.description && (
                 <div className="mb-5 rounded-2xl bg-[#F5F8FF] p-5">
                   <h3 className="font-semibold text-slate-950">Establishment overview</h3>
-                  <p className="mt-2 leading-7 text-slate-600">{selectedEstablishment.description}</p>
+                  <p className="mt-2 break-words leading-7 text-slate-600">{selectedEstablishment.description}</p>
                 </div>
               )}
 
@@ -1499,7 +1499,7 @@ function InfoRow({ icon: Icon, text }: { icon: React.ElementType; text: string }
   return (
     <div className="flex items-center gap-2 rounded-2xl bg-[#F5F8FF] p-3">
       <Icon className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
-      <span>{text}</span>
+      <span className="min-w-0 flex-1 break-words">{text}</span>
     </div>
   )
 }
