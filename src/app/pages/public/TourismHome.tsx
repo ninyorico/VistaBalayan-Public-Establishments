@@ -1012,7 +1012,7 @@ export default function TourismHome() {
 
       {mobileDiscoveryPanel && (
         <div
-          className="fixed inset-0 z-40 flex items-end bg-[#193364]/35 p-3 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 flex items-center justify-center bg-[#193364]/35 p-4 backdrop-blur-sm lg:hidden"
           role="presentation"
           onClick={() => setMobileDiscoveryPanel(null)}
         >
@@ -1020,7 +1020,7 @@ export default function TourismHome() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="mobile-discovery-title"
-            className="max-h-[85dvh] w-full overflow-y-auto rounded-[1.75rem] bg-[#E0E5EC] p-4 text-[#193364] shadow-[0_-12px_30px_rgba(25,51,100,0.22)]"
+            className="max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-[1.75rem] bg-[#E0E5EC] p-4 text-[#193364] shadow-[0_12px_30px_rgba(25,51,100,0.22)]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-4 flex items-start justify-between gap-4">
