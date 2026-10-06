@@ -841,7 +841,7 @@ export default function TourismHome() {
       <section className="mx-auto max-w-[1440px] px-5 py-8 sm:px-6 lg:px-10 lg:py-7">
         <Card className="rounded-[1.75rem] border-[#AFB3B5] bg-[#E0E5EC] shadow-[9px_9px_16px_rgba(163,177,198,0.60),-9px_-9px_16px_rgba(255,255,255,0.55)]">
           <CardContent className="flex flex-col gap-5 p-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
               {categories.map((cat) => {
                 const Icon = cat.icon
                 return (
@@ -850,13 +850,13 @@ export default function TourismHome() {
                     type="button"
                     onClick={() => handleCategoryChange(cat.id)}
                     variant={selectedType === cat.id ? 'default' : 'secondary'}
-                    className={`rounded-2xl px-4 py-2.5 text-sm font-semibold shadow-none active:translate-y-[1px] ${
+                    className={`w-full min-w-0 justify-center whitespace-nowrap rounded-2xl px-2 py-2.5 text-xs font-semibold shadow-none active:translate-y-[1px] sm:w-auto sm:px-4 sm:text-sm ${
                       selectedType === cat.id
                         ? 'bg-[#193364] text-white hover:bg-[#193364]'
                         : 'bg-[#E5E8E1] text-[#193364] hover:bg-[#AFB3B5]'
                     }`}
                   >
-                    <Icon className="h-4 w-4" strokeWidth={1.8} />
+                    <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} />
                     {cat.name}
                   </Button>
                 )
@@ -923,8 +923,7 @@ export default function TourismHome() {
                           <MapPin className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.8} />
                           <span className="min-w-0 truncate whitespace-nowrap" title={est.address}>{est.address}</span>
                         </div>
-                        {est.description && <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600 sm:mt-3 sm:text-sm sm:leading-6">{est.description}</p>}
-                                                <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#193364] sm:mt-4 sm:text-sm">
+                        <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#193364] sm:mt-4 sm:text-sm">
                           View details <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" strokeWidth={1.8} />
                         </span>
                       </CardContent>
