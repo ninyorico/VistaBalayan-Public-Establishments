@@ -750,7 +750,7 @@ export default function TourismHome() {
         />
         <div className="absolute inset-0 bg-[#E0E5EC]/30" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#193364]/85 via-[#193364]/55 to-transparent" />
-        <div className="relative mx-auto grid min-h-0 max-w-7xl grid-cols-1 items-center gap-8 px-5 py-10 sm:px-6 lg:min-h-[76dvh] lg:grid-cols-[1.02fr_0.98fr] lg:px-8">
+        <div className="relative mx-auto grid min-h-0 max-w-[1440px] grid-cols-1 items-center gap-8 px-5 py-10 sm:px-6 lg:min-h-[58dvh] lg:grid-cols-[1.15fr_0.85fr] lg:gap-12 lg:px-10 lg:py-12">
           <div className="max-w-2xl">
             <Badge className="mb-5 rounded-full border-[#AFB3B5] bg-[#E5E8E1] px-4 py-2 text-sm font-medium text-[#193364] shadow-[inset_3px_3px_7px_rgba(163,177,198,0.35),inset_-3px_-3px_7px_rgba(255,255,255,0.65)] hover:bg-[#E5E8E1]">
               <Sparkles className="h-4 w-4" strokeWidth={1.8} />
@@ -838,7 +838,7 @@ export default function TourismHome() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-8 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-[1440px] px-5 py-8 sm:px-6 lg:px-10 lg:py-7">
         <Card className="rounded-[1.75rem] border-[#AFB3B5] bg-[#E0E5EC] shadow-[9px_9px_16px_rgba(163,177,198,0.60),-9px_-9px_16px_rgba(255,255,255,0.55)]">
           <CardContent className="flex flex-col gap-5 p-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-2">
@@ -870,7 +870,7 @@ export default function TourismHome() {
         </Card>
       </section>
 
-      <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-5 pb-16 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
+      <section className="mx-auto grid max-w-[1440px] grid-cols-1 gap-6 px-5 pb-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-7 lg:px-10">
         <div>
           {loading ? (
             <Card className="rounded-[2rem] border-[#AFB3B5] bg-[#E0E5EC] py-14 shadow-[0_24px_80px_rgba(14,90,114,0.08)]">
