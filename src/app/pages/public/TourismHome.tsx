@@ -894,9 +894,9 @@ export default function TourismHome() {
                 return (
                   <Card
                     key={est.id}
-                    className="public-neumorphic-surface group overflow-hidden rounded-[1.7rem] border-[#AFB3B5] py-0 transition duration-200 hover:-translate-y-1 hover:shadow-[12px_12px_20px_rgba(163,177,198,0.68),-12px_-12px_20px_rgba(255,255,255,0.62)]"
+                    className="public-neumorphic-surface group h-full overflow-hidden rounded-[1.7rem] border-[#AFB3B5] py-0 transition duration-200 hover:-translate-y-1 hover:shadow-[12px_12px_20px_rgba(163,177,198,0.68),-12px_-12px_20px_rgba(255,255,255,0.62)]"
                   >
-                    <button onClick={() => openDetails(est)} className="w-full text-left active:translate-y-[1px]">
+                    <button onClick={() => openDetails(est)} className="flex h-full w-full flex-col text-left active:translate-y-[1px]">
                       {displayImage ? (
                         <div className="relative h-36 overflow-hidden sm:h-56">
                           <ListingPhoto sources={est.images} alt={est.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
@@ -911,9 +911,9 @@ export default function TourismHome() {
                           <Icon className="h-14 w-14 text-[#6C9772]" strokeWidth={1.8} />
                         </div>
                       )}
-                      <CardContent className="p-3 sm:p-5">
+                      <CardContent className="flex w-full flex-1 flex-col p-3 sm:p-5">
                         <div className="mb-3 flex items-start justify-between gap-3">
-                          <h3 className="line-clamp-2 text-sm font-semibold leading-5 tracking-[-0.02em] text-slate-950 sm:text-lg sm:leading-6">{est.name}</h3>
+                          <h3 className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 tracking-[-0.02em] text-slate-950 sm:min-h-12 sm:text-lg sm:leading-6">{est.name}</h3>
                           <Badge className="shrink-0 rounded-full bg-[#E5E8E1] px-3 py-1 text-xs font-semibold text-[#193364] shadow-none hover:bg-[#E5E8E1]">
                             {publicCategory}
                           </Badge>
@@ -923,7 +923,7 @@ export default function TourismHome() {
                           <MapPin className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.8} />
                           <span className="min-w-0 truncate whitespace-nowrap" title={est.address}>{est.address}</span>
                         </div>
-                        <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#193364] sm:mt-4 sm:text-sm">
+                        <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-semibold text-[#193364] sm:pt-4 sm:text-sm">
                           View details <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" strokeWidth={1.8} />
                         </span>
                       </CardContent>
