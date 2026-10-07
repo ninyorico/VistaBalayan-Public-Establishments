@@ -904,7 +904,7 @@ export default function TourismHome() {
                     <button onClick={() => openDetails(est)} className="flex h-full w-full flex-col text-left active:translate-y-[1px]">
                       {displayImage ? (
                         <div className="relative aspect-[4/3] overflow-hidden bg-[#D8DEE7] sm:aspect-[16/9]">
-                          <ListingPhoto sources={est.images} alt={est.name} className="block h-full w-full object-contain transition duration-500 group-hover:scale-105" />
+                          <ListingPhoto sources={est.images} alt={est.name} className="block h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                           {est.images.length > 1 && (
                             <Badge className="absolute bottom-3 right-3 rounded-full border-white/10 bg-[#193364]/75 px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-[#193364]/75">
                               {est.images.length} photos
