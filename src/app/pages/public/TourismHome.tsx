@@ -1356,12 +1356,17 @@ export default function TourismHome() {
           </div>
         </div>
       )}
-      <footer className="border-t border-[#AFB3B5] bg-[#E0E5EC] px-6 py-8 text-sm text-slate-600 sm:px-10">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-2">
-          <span className="font-semibold text-[#193364]">VistaBalayan Tourism</span>
-          <a href="/privacy-policy" className="underline hover:text-[#193364]">Privacy Policy</a>
-          <a href="/terms-and-conditions" className="underline hover:text-[#193364]">Terms and Conditions</a>
-          <a href="/cookie-policy" className="underline hover:text-[#193364]">Cookie Policy</a>
+      <footer className="border-t border-[#AFB3B5] bg-[#E0E5EC] px-5 py-8 text-sm text-slate-600 sm:px-10 sm:py-10">
+        <div className="mx-auto grid max-w-7xl gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+          <div className="max-w-md">
+            <p className="font-semibold text-[#193364]">VistaBalayan Tourism</p>
+            <p className="mt-2 leading-6">Tourism discovery and establishment information for Balayan.</p>
+          </div>
+          <nav aria-label="Footer links" className="flex flex-wrap gap-x-5 gap-y-3 sm:justify-end">
+            <a href="/privacy-policy" className="underline underline-offset-2 hover:text-[#193364]">Privacy Policy</a>
+            <a href="/terms-and-conditions" className="underline underline-offset-2 hover:text-[#193364]">Terms and Conditions</a>
+            <a href="/cookie-policy" className="underline underline-offset-2 hover:text-[#193364]">Cookie Policy</a>
+          </nav>
         </div>
       </footer>
     </main>
