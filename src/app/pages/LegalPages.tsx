@@ -78,8 +78,8 @@ export default function LegalPage({ document }: { document: LegalDocument }) {
         <section className="rounded-3xl bg-[#E0E5EC] p-2 sm:p-4">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#6C9772]">Draft for legal and municipal review</p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-[#193364] sm:text-5xl">{documents[document].title}</h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">{documents[document].intro}</p>
-          <p className="mt-3 text-sm font-semibold text-amber-700">This document is not legal advice and must not be treated as final until the marked facts, contacts, retention periods, vendors, and procedures are confirmed.</p>
+          <p className="mt-4 max-w-3xl text-justify text-base leading-7 text-slate-600">{documents[document].intro}</p>
+          <p className="mt-3 text-justify text-sm font-semibold text-amber-700">This document is not legal advice and must not be treated as final until the marked facts, contacts, retention periods, vendors, and procedures are confirmed.</p>
         </section>
         <div className="space-y-4">{content}</div>
         <footer className="flex flex-wrap gap-x-5 gap-y-2 px-2 pb-6 text-sm text-slate-600">
