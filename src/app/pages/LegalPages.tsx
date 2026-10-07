@@ -12,7 +12,7 @@ const documents: Record<LegalDocument, { title: string; intro: string }> = {
 const Section = ({ title, children }: { title: string; children: ReactNode }) => (
   <section className="rounded-3xl bg-white/65 p-5 shadow-sm sm:p-7">
     <h2 className="text-xl font-semibold text-[#193364]">{title}</h2>
-    <div className="mt-3 space-y-3 text-sm leading-7 text-slate-700">{children}</div>
+    <div className="mt-3 space-y-3 text-justify text-sm leading-7 text-slate-700">{children}</div>
   </section>
 );
 
