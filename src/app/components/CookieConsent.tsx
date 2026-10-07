@@ -8,6 +8,11 @@ type ConsentState = {
 };
 
 const CONSENT_KEY = "vistabalayan_cookie_consent_v1";
+const OPEN_CONSENT_EVENT = "vistabalayan:open-cookie-preferences";
+
+export function openCookiePreferences() {
+  window.dispatchEvent(new Event(OPEN_CONSENT_EVENT));
+}
 
 const readConsent = (): ConsentState | null => {
   try {
@@ -34,6 +39,10 @@ export default function CookieConsent() {
       setAnalytics(existing.analytics);
       setPreferences(existing.preferences);
     }
+
+    const handleOpenPreferences = () => setShowPreferences(true);
+    window.addEventListener(OPEN_CONSENT_EVENT, handleOpenPreferences);
+    return () => window.removeEventListener(OPEN_CONSENT_EVENT, handleOpenPreferences);
   }, []);
 
   const save = (nextAnalytics: boolean, nextPreferences: boolean) => {
@@ -101,9 +110,5 @@ export default function CookieConsent() {
     );
   }
 
-  return (
-    <button type="button" onClick={() => setShowPreferences(true)} className="fixed bottom-4 left-4 z-[80] rounded-full border border-slate-300 bg-[#E0E5EC] px-3 py-2 text-xs font-semibold text-[#193364] shadow-lg" aria-label="Open cookie preferences">
-      Cookie settings
-    </button>
-  );
+  return null;
 }
