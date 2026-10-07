@@ -27,6 +27,7 @@ import { Badge } from '../../components/ui/badge'
 import { Input } from '../../components/ui/input'
 import { Separator } from '../../components/ui/separator'
 import { supabase } from '../../../lib/supabase'
+import { hasPreferencesConsent } from '../../../lib/consent'
 
 interface Establishment {
   id: string
@@ -192,6 +193,7 @@ const getGoogleMapsDirectionsUrl = (establishment: Establishment, origin?: UserL
 }
 const readBehavior = (): BehaviorProfile => {
   if (typeof window === 'undefined') return emptyBehavior
+  if (!hasPreferencesConsent()) return emptyBehavior
   try {
     const stored = window.localStorage.getItem(BEHAVIOR_KEY)
     return stored ? { ...emptyBehavior, ...JSON.parse(stored) } : emptyBehavior
@@ -202,6 +204,7 @@ const readBehavior = (): BehaviorProfile => {
 
 const saveBehavior = (behavior: BehaviorProfile) => {
   if (typeof window === 'undefined') return
+  if (!hasPreferencesConsent()) return
   window.localStorage.setItem(BEHAVIOR_KEY, JSON.stringify(behavior))
 }
 
@@ -220,12 +223,14 @@ const getRatingVisitorToken = () => {
 
 const readReviewerName = () => {
   if (typeof window === 'undefined') return ''
+  if (!hasPreferencesConsent()) return ''
   window.localStorage.removeItem(LEGACY_LOCAL_RATINGS_KEY)
   return window.localStorage.getItem(REVIEWER_NAME_KEY)?.trim() || ''
 }
 
 const saveReviewerName = (name: string) => {
   if (typeof window === 'undefined') return
+  if (!hasPreferencesConsent()) return
   const trimmedName = name.trim()
   if (trimmedName) window.localStorage.setItem(REVIEWER_NAME_KEY, trimmedName)
 }
@@ -898,8 +903,8 @@ export default function TourismHome() {
                   >
                     <button onClick={() => openDetails(est)} className="flex h-full w-full flex-col text-left active:translate-y-[1px]">
                       {displayImage ? (
-                        <div className="relative h-36 overflow-hidden sm:h-56">
-                          <ListingPhoto sources={est.images} alt={est.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                        <div className="relative aspect-[4/3] overflow-hidden bg-[#D8DEE7] sm:aspect-[16/9]">
+                          <ListingPhoto sources={est.images} alt={est.name} className="block h-full w-full object-contain transition duration-500 group-hover:scale-105" />
                           {est.images.length > 1 && (
                             <Badge className="absolute bottom-3 right-3 rounded-full border-white/10 bg-[#193364]/75 px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-[#193364]/75">
                               {est.images.length} photos
