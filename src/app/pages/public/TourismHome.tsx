@@ -1351,6 +1351,14 @@ export default function TourismHome() {
           </div>
         </div>
       )}
+      <footer className="border-t border-[#AFB3B5] bg-[#E0E5EC] px-6 py-8 text-sm text-slate-600 sm:px-10">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-2">
+          <span className="font-semibold text-[#193364]">VistaBalayan Tourism</span>
+          <a href="/privacy-policy" className="underline hover:text-[#193364]">Privacy Policy</a>
+          <a href="/terms-and-conditions" className="underline hover:text-[#193364]">Terms and Conditions</a>
+          <a href="/cookie-policy" className="underline hover:text-[#193364]">Cookie Policy</a>
+        </div>
+      </footer>
     </main>
   )
 }
