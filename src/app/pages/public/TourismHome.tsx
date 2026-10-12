@@ -19,6 +19,7 @@ import {
   Star,
   X,
   ImagePlus,
+  Flag,
 } from 'lucide-react'
 import React from 'react'
 import { Button } from '../../components/ui/button'
@@ -65,6 +66,7 @@ interface RatingSummary {
 }
 
 interface RatingReview {
+  id?: string
   establishment_id: string
   rating: number
   comment: string | null
@@ -472,7 +474,7 @@ export default function TourismHome() {
   const fetchRatingReviews = async (establishmentId: string) => {
     let { data, error } = await supabase
       .from('establishment_rating_reviews')
-      .select('establishment_id, rating, comment, reviewer_name, photo_path, created_at')
+      .select('id, establishment_id, rating, comment, reviewer_name, photo_path, created_at')
       .eq('establishment_id', establishmentId)
       .order('created_at', { ascending: false })
       .limit(50)
@@ -555,6 +557,27 @@ export default function TourismHome() {
     }
 
     setSubmittingRating(false)
+  }
+
+  const reportReview = async (review: RatingReview) => {
+    if (!review.id) {
+      window.alert('This review cannot be reported until the review service is updated.')
+      return
+    }
+    const reason = window.prompt('Why are you reporting this review? Please describe the violation.')?.trim()
+    if (!reason) return
+    const visitorToken = ratingVisitorToken || getRatingVisitorToken()
+    if (!ratingVisitorToken) setRatingVisitorToken(visitorToken)
+    const { error } = await supabase.rpc('report_establishment_rating', {
+      p_rating_id: review.id,
+      p_reporter_token: visitorToken,
+      p_reason: reason,
+    })
+    if (error) {
+      window.alert(error.message.includes('duplicate') ? 'You have already reported this review.' : 'The report could not be submitted. Please try again.')
+      return
+    }
+    window.alert('Thank you. Your report was sent to the Tourism Officer for review.')
   }
 
   useEffect(() => {
@@ -1342,7 +1365,7 @@ export default function TourismHome() {
                 {ratingMessage && <p className="mt-3 text-sm font-medium text-[#193364]">{ratingMessage}</p>}
               </div>
 
-              <ReviewSummary summary={selectedRating} reviews={selectedReviews} />
+              <ReviewSummary summary={selectedRating} reviews={selectedReviews} onReport={reportReview} />
 
 
               <Button
@@ -1373,7 +1396,7 @@ export default function TourismHome() {
   )
 }
 
-function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: RatingReview[] }) {
+function ReviewSummary({ summary, reviews, onReport }: { summary: RatingSummary; reviews: RatingReview[]; onReport: (review: RatingReview) => void }) {
   const [selectedRating, setSelectedRating] = useState(0)
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null)
   const sortedReviews = sortReviewsForDisplay(reviews)
@@ -1463,6 +1486,7 @@ function ReviewSummary({ summary, reviews }: { summary: RatingSummary; reviews: 
                   </button>
                 )}
                 {display.comment && <p className="mt-2 text-sm leading-6 text-slate-600">{display.comment}</p>}
+                {review.id && <button type="button" onClick={() => onReport(review)} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-red-700"><Flag className="h-3.5 w-3.5" />Report this review</button>}
               </div>
             )
           })
