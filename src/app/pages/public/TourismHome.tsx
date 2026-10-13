@@ -97,6 +97,15 @@ const createEmptyRatingSummary = (): RatingSummary => ({ average: 0, count: 0, b
 const emptyRatingSummary = createEmptyRatingSummary()
 const INAPPROPRIATE_REVIEW_PATTERN = /(^|[^a-z0-9])(asshole|bastard|bitch|bullshit|cunt|dick|fuck|fucker|motherfucker|nigger|piss|porn|shit|slut|whore|putang\s*ina|tangina|tanga|gago|gaga|napakagago|napakagaga|ulol|tarantado|leche|lecheng|pakyu|burat|kantot|iyot)([^a-z0-9]|$)/i
 
+const reviewReportOptions = [
+  { value: 'offensive', label: 'Offensive or abusive language' },
+  { value: 'harassment', label: 'Harassment or hate speech' },
+  { value: 'spam', label: 'Spam or advertising' },
+  { value: 'misleading', label: 'False or misleading information' },
+  { value: 'privacy', label: 'Personal information' },
+  { value: 'other', label: 'Other' },
+] as const
+
 const categories = [
   { id: 'all', name: 'All stays', icon: Search },
   { id: 'Resort', name: 'Resorts', icon: Hotel },
@@ -365,6 +374,10 @@ export default function TourismHome() {
   const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [mobileDiscoveryPanel, setMobileDiscoveryPanel] = useState<'recommendations' | 'nearest' | null>(null)
   const [showSelectedMap, setShowSelectedMap] = useState(false)
+  const [reportingReview, setReportingReview] = useState<RatingReview | null>(null)
+  const [reportReason, setReportReason] = useState<typeof reviewReportOptions[number]['value'] | ''>('')
+  const [reportDetails, setReportDetails] = useState('')
+  const [submittingReport, setSubmittingReport] = useState(false)
 
   useEffect(() => {
     if (!mobileDiscoveryPanel) return
@@ -559,24 +572,38 @@ export default function TourismHome() {
     setSubmittingRating(false)
   }
 
-  const reportReview = async (review: RatingReview) => {
+  const reportReview = (review: RatingReview) => {
     if (!review.id) {
       window.alert('This review cannot be reported until the review service is updated.')
       return
     }
-    const reason = window.prompt('Why are you reporting this review? Please describe the violation.')?.trim()
-    if (!reason) return
+    setReportingReview(review)
+    setReportReason('')
+    setReportDetails('')
+  }
+
+  const submitReviewReport = async () => {
+    if (!reportingReview?.id || !reportReason || submittingReport) return
+    const selectedReason = reviewReportOptions.find((option) => option.value === reportReason)?.label || 'Other'
+    const details = reportDetails.trim()
+    if (reportReason === 'other' && details.length < 3) return
+    const reason = details ? `${selectedReason}: ${details}` : selectedReason
+    setSubmittingReport(true)
     const visitorToken = ratingVisitorToken || getRatingVisitorToken()
     if (!ratingVisitorToken) setRatingVisitorToken(visitorToken)
     const { error } = await supabase.rpc('report_establishment_rating', {
-      p_rating_id: review.id,
+      p_rating_id: reportingReview.id,
       p_reporter_token: visitorToken,
       p_reason: reason,
     })
+    setSubmittingReport(false)
     if (error) {
       window.alert(error.message.includes('duplicate') ? 'You have already reported this review.' : 'The report could not be submitted. Please try again.')
       return
     }
+    setReportingReview(null)
+    setReportReason('')
+    setReportDetails('')
     window.alert('Thank you. Your report was sent to the Tourism Officer for review.')
   }
 
@@ -1377,6 +1404,16 @@ export default function TourismHome() {
             </div>
             </div>
           </div>
+        </div>
+      )}
+      {reportingReview && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#193364]/35 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !submittingReport) setReportingReview(null) }}>
+          <section className="w-full max-w-lg rounded-[2rem] border border-white/80 bg-[#E0E5EC] p-6 shadow-[14px_14px_30px_rgba(25,51,100,.28),-10px_-10px_24px_rgba(255,255,255,.78)] sm:p-7" role="dialog" aria-modal="true" aria-labelledby="report-review-title">
+            <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-[#6474A5]">Community safety</p><h2 id="report-review-title" className="mt-1 text-xl font-bold text-[#193364]">Report this review</h2><p className="mt-2 text-sm leading-6 text-slate-600">Choose the reason that best describes the violation.</p></div><button type="button" onClick={() => { if (!submittingReport) setReportingReview(null) }} disabled={submittingReport} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E0E5EC] text-[#6474A5] shadow-[4px_4px_8px_rgba(163,177,198,.42),-4px_-4px_8px_rgba(255,255,255,.7)] disabled:opacity-50" aria-label="Close report dialog"><X className="h-5 w-5" /></button></div>
+            <div className="mt-5 space-y-2">{reviewReportOptions.map((option) => <label key={option.value} className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-medium transition ${reportReason === option.value ? 'border-[#6C63FF]/40 bg-[#E8E7FF] text-[#193364] shadow-[inset_3px_3px_7px_rgba(108,99,255,.12),inset_-3px_-3px_7px_rgba(255,255,255,.7)]' : 'border-white/70 bg-[#E0E5EC] text-slate-600 shadow-[4px_4px_8px_rgba(163,177,198,.3),-4px_-4px_8px_rgba(255,255,255,.65)]'}`}><input type="radio" name="review-report-reason" value={option.value} checked={reportReason === option.value} onChange={() => setReportReason(option.value)} className="h-4 w-4 accent-[#6C63FF]" />{option.label}</label>)}</div>
+            <label className="mt-5 block text-sm font-semibold text-[#193364]">Additional details <span className="font-normal text-slate-500">(optional, except Other)</span><textarea value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} maxLength={400} rows={3} disabled={submittingReport} placeholder="Tell the Tourism Officer more about the issue" className="mt-2 w-full resize-y rounded-2xl border border-white/70 bg-[#E0E5EC] p-4 text-sm leading-6 text-slate-700 outline-none shadow-[inset_4px_4px_9px_rgba(163,177,198,.42),inset_-4px_-4px_9px_rgba(255,255,255,.72)] placeholder:text-slate-400 focus:border-[#6C63FF]/50 focus:ring-2 focus:ring-[#6C63FF]/20" /></label>
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={() => setReportingReview(null)} disabled={submittingReport} className="min-h-11 rounded-2xl bg-[#E0E5EC] px-5 py-2.5 text-sm font-semibold text-[#193364] shadow-[5px_5px_10px_rgba(163,177,198,.48),-5px_-5px_10px_rgba(255,255,255,.72)] disabled:opacity-50">Cancel</button><button type="button" onClick={() => void submitReviewReport()} disabled={submittingReport || !reportReason || (reportReason === 'other' && reportDetails.trim().length < 3)} className="min-h-11 rounded-2xl bg-[#193364] px-5 py-2.5 text-sm font-semibold text-white shadow-[5px_5px_10px_rgba(163,177,198,.48),-5px_-5px_10px_rgba(255,255,255,.72)] hover:bg-[#27477D] disabled:cursor-not-allowed disabled:opacity-50">{submittingReport ? 'Submitting...' : 'Submit report'}</button></div>
+          </section>
         </div>
       )}
       <footer className="border-t border-[#AFB3B5] bg-[#E0E5EC] px-5 py-8 text-sm text-slate-600 sm:px-10 sm:py-10">
