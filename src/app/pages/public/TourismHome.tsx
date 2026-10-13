@@ -380,6 +380,35 @@ export default function TourismHome() {
   const [submittingReport, setSubmittingReport] = useState(false)
 
   useEffect(() => {
+    const modalOpen = Boolean(mobileDiscoveryPanel || selectedEstablishment || reportingReview)
+    if (!modalOpen) return
+
+    const scrollY = window.scrollY
+    const previousBodyStyles = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+      touchAction: document.body.style.touchAction,
+    }
+
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+    document.body.style.touchAction = 'none'
+
+    return () => {
+      document.body.style.overflow = previousBodyStyles.overflow
+      document.body.style.position = previousBodyStyles.position
+      document.body.style.top = previousBodyStyles.top
+      document.body.style.width = previousBodyStyles.width
+      document.body.style.touchAction = previousBodyStyles.touchAction
+      window.scrollTo(0, scrollY)
+    }
+  }, [mobileDiscoveryPanel, selectedEstablishment, reportingReview])
+
+  useEffect(() => {
     if (!mobileDiscoveryPanel) return
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setMobileDiscoveryPanel(null)
