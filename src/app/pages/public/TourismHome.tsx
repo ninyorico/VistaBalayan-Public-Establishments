@@ -66,7 +66,7 @@ interface RatingSummary {
 }
 
 interface RatingReview {
-  id?: string
+  id?: string | null
   establishment_id: string
   rating: number
   comment: string | null
@@ -528,7 +528,7 @@ export default function TourismHome() {
         .eq('establishment_id', establishmentId)
         .order('created_at', { ascending: false })
         .limit(50)
-      data = (legacyResult.data || []).map((item) => ({ ...item, reviewer_name: null, photo_path: null }))
+      data = (legacyResult.data || []).map((item) => ({ id: null, ...item, reviewer_name: null, photo_path: null }))
       error = legacyResult.error
     }
 
