@@ -29,6 +29,9 @@ ALTER TABLE public.establishment_ratings
 ALTER TABLE public.establishment_ratings
   ADD COLUMN IF NOT EXISTS reviewer_name TEXT;
 
+ALTER TABLE public.establishment_ratings
+  ADD COLUMN IF NOT EXISTS photo_path TEXT;
+
 UPDATE public.establishment_ratings
 SET reviewer_name = 'Anonymous visitor'
 WHERE reviewer_name IS NULL OR trim(reviewer_name) = '';
@@ -141,10 +144,12 @@ GRANT SELECT ON public.establishment_rating_summaries TO anon, authenticated;
 DROP VIEW IF EXISTS public.establishment_rating_reviews;
 CREATE VIEW public.establishment_rating_reviews AS
 SELECT
+  ratings.id,
   ratings.establishment_id,
   ratings.rating,
   ratings.reviewer_name,
   NULLIF(trim(ratings.comment), '') AS comment,
+  ratings.photo_path,
   ratings.created_at
 FROM public.establishment_ratings ratings
 JOIN public.establishments establishments
@@ -161,14 +166,38 @@ WHERE establishments.status = 'active'
 
 GRANT SELECT ON public.establishment_rating_reviews TO anon, authenticated;
 
+-- Review photos are uploaded by the public client and are referenced by the
+-- rating RPC below. Keep the object path scoped to an establishment UUID and
+-- a generated review UUID.
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('review-photos', 'review-photos', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Public can upload review photos" ON storage.objects;
+CREATE POLICY "Public can upload review photos"
+  ON storage.objects FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (
+    bucket_id = 'review-photos'
+    AND name ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}\.(jpg|jpeg|png|webp)$'
+  );
+
+DROP POLICY IF EXISTS "Anyone can read review photos" ON storage.objects;
+CREATE POLICY "Anyone can read review photos"
+  ON storage.objects FOR SELECT
+  TO anon, authenticated
+  USING (bucket_id = 'review-photos');
+
 DROP FUNCTION IF EXISTS public.submit_establishment_rating(UUID, TEXT, INTEGER);
 DROP FUNCTION IF EXISTS public.submit_establishment_rating(UUID, TEXT, INTEGER, TEXT);
+DROP FUNCTION IF EXISTS public.submit_establishment_rating(UUID, TEXT, INTEGER, TEXT, TEXT);
 CREATE OR REPLACE FUNCTION public.submit_establishment_rating(
   p_establishment_id UUID,
   p_visitor_token TEXT,
   p_rating INTEGER,
   p_comment TEXT DEFAULT NULL,
-  p_reviewer_name TEXT DEFAULT NULL
+  p_reviewer_name TEXT DEFAULT NULL,
+  p_photo_path TEXT DEFAULT NULL
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -181,6 +210,7 @@ DECLARE
   public_establishment_exists BOOLEAN;
   normalized_comment TEXT := NULLIF(trim(p_comment), '');
   normalized_reviewer_name TEXT := NULLIF(trim(p_reviewer_name), '');
+  normalized_photo_path TEXT := NULLIF(trim(p_photo_path), '');
 BEGIN
   IF p_establishment_id IS NULL THEN
     RAISE EXCEPTION 'establishment_id is required';
@@ -206,6 +236,11 @@ BEGIN
     RAISE EXCEPTION 'reviewer name must be 80 characters or fewer';
   END IF;
 
+  IF normalized_photo_path IS NOT NULL
+     AND normalized_photo_path !~ '^[0-9a-f-]{36}/[0-9a-f-]{36}\.(jpg|jpeg|png|webp)$' THEN
+    RAISE EXCEPTION 'invalid review photo path';
+  END IF;
+
   SELECT EXISTS (
     SELECT 1
     FROM public.establishments establishments
@@ -227,15 +262,16 @@ BEGIN
 
   token_hash := md5(normalized_token);
 
-  INSERT INTO public.establishment_ratings (establishment_id, visitor_token_hash, rating, reviewer_name, comment)
-  VALUES (p_establishment_id, token_hash, p_rating, normalized_reviewer_name, normalized_comment)
+  INSERT INTO public.establishment_ratings (establishment_id, visitor_token_hash, rating, reviewer_name, comment, photo_path)
+  VALUES (p_establishment_id, token_hash, p_rating, normalized_reviewer_name, normalized_comment, normalized_photo_path)
   ON CONFLICT (establishment_id, visitor_token_hash)
   DO UPDATE SET
     rating = EXCLUDED.rating,
     reviewer_name = EXCLUDED.reviewer_name,
-    comment = EXCLUDED.comment;
+    comment = EXCLUDED.comment,
+    photo_path = EXCLUDED.photo_path;
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.submit_establishment_rating(UUID, TEXT, INTEGER, TEXT, TEXT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.submit_establishment_rating(UUID, TEXT, INTEGER, TEXT, TEXT) TO anon, authenticated;
+REVOKE ALL ON FUNCTION public.submit_establishment_rating(UUID, TEXT, INTEGER, TEXT, TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.submit_establishment_rating(UUID, TEXT, INTEGER, TEXT, TEXT, TEXT) TO anon, authenticated;
