@@ -1070,7 +1070,7 @@ export default function TourismHome() {
                   className="h-11 justify-center rounded-2xl bg-[#E5E8E1] px-3 text-sm font-semibold text-[#193364] shadow-[inset_3px_3px_7px_rgba(163,177,198,0.35),inset_-3px_-3px_7px_rgba(255,255,255,0.65)] hover:bg-[#F5F8FF] active:translate-y-[1px]"
                 >
                   <Sparkles className="h-4 w-4" strokeWidth={1.8} />
-                  AI-assisted recommendations
+                  AI picks
                 </Button>
               </div>
             </Card>
@@ -1090,7 +1090,7 @@ export default function TourismHome() {
                   className="shrink-0 rounded-2xl bg-[#193364] px-4 py-2 text-sm font-semibold text-white shadow-[5px_5px_10px_rgba(163,177,198,0.60),-5px_-5px_10px_rgba(255,255,255,0.52)] hover:bg-[#193364] active:translate-y-[1px] disabled:cursor-wait disabled:opacity-80"
                 >
                   {locationStatus === 'loading' && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />}
-                  {locationStatus === 'loading' ? 'Finding...' : discoveryMode === 'expanded' ? 'Show less' : 'AI-assisted recommendations'}
+                  {locationStatus === 'loading' ? 'Finding...' : discoveryMode === 'expanded' ? 'Show less' : 'AI recommendations'}
                 </Button>
               </div>
               {discoveryMode === 'expanded' ? (
