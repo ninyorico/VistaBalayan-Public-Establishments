@@ -1544,12 +1544,12 @@ export default function TourismHome() {
               {selectedEstablishment.description && (
                 <div className="mb-5 rounded-2xl bg-[#F5F8FF] p-5">
                   <h3 className="font-semibold text-slate-950">Establishment overview</h3>
-                  <p className="mt-2 break-words [overflow-wrap:anywhere] leading-7 text-slate-600">{selectedEstablishment.description}</p>
+                  <p className="mt-2 break-words text-justify leading-7 text-slate-600 [overflow-wrap:anywhere] hyphens-auto">{selectedEstablishment.description}</p>
                 </div>
               )}
 
               <div className="grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-                <InfoRow icon={MapPin} text={selectedEstablishment.address} />
+                <InfoRow icon={MapPin} text={selectedEstablishment.address} singleLine />
                 {selectedEstablishment.contact_number && <InfoRow icon={Phone} text={selectedEstablishment.contact_number} />}
                 {selectedEstablishment.email && <InfoRow icon={Mail} text={selectedEstablishment.email} />}
                 {selectedEstablishment.opening_hours && <InfoRow icon={Clock} text={selectedEstablishment.opening_hours} />}
@@ -1894,11 +1894,11 @@ function RatingDisplay({ summary, className = '' }: { summary?: RatingSummary; c
   )
 }
 
-function InfoRow({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
+function InfoRow({ icon: Icon, text, singleLine = false }: { icon: React.ElementType; text: string; singleLine?: boolean }) {
   return (
-    <div className="flex items-center gap-2 rounded-2xl bg-[#F5F8FF] p-3">
+    <div className="flex min-w-0 items-center gap-2 rounded-2xl bg-[#F5F8FF] p-3">
       <Icon className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.8} />
-      <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">{text}</span>
+      <span className={singleLine ? 'min-w-0 flex-1 truncate whitespace-nowrap' : 'min-w-0 flex-1 break-words [overflow-wrap:anywhere]'} title={singleLine ? text : undefined}>{text}</span>
     </div>
   )
 }
