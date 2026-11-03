@@ -967,16 +967,14 @@ export default function TourismHome() {
           .sort(([, countA], [, countB]) => countB - countA)
         const searchBoost = searchMatches.reduce((boost, [, count]) => boost + Math.min(count * 4, 20), 0)
         const featuredBoost = est.featured ? 8 : 0
-        const roomBoost = est.total_rooms ? Math.min(est.total_rooms / 8, 8) : 0
         const distanceScore = distance === null ? 0 : Math.max(0, 100 - distance * 18)
-        const score = distanceScore + categoryBoost * 7 + (viewedCategoryMatch ? 4 : 0) + searchBoost + featuredBoost + roomBoost
+        const score = distanceScore + categoryBoost * 7 + (viewedCategoryMatch ? 4 : 0) + searchBoost + featuredBoost
         const signals = [
           ...(distance !== null ? [{ key: 'distance', text: `Nearby: ${distance.toFixed(1)} km route from your location.`, weight: distanceScore }] : []),
           ...(searchMatches.length > 0 ? [{ key: 'search', text: `Matches your search for "${searchMatches[0][0]}".`, weight: searchBoost }] : []),
           ...(categoryBoost > 0 ? [{ key: 'category', text: `Fits your interest in ${publicCategory.toLowerCase()} stays.`, weight: categoryBoost * 7 }] : []),
           ...(viewedCategoryMatch ? [{ key: 'viewed-category', text: `Similar to the ${publicCategory.toLowerCase()} places you viewed.`, weight: 4 }] : []),
           ...(featuredBoost > 0 ? [{ key: 'featured', text: 'A featured destination to discover.', weight: featuredBoost }] : []),
-          ...(roomBoost > 0 ? [{ key: 'rooms', text: 'Offers room options for an overnight stay.', weight: roomBoost }] : []),
         ].sort((a, b) => b.weight - a.weight)
         const primarySignal = signals[0] || { key: `category:${publicCategory}`, text: `A ${publicCategory.toLowerCase()} listing in Balayan.`, weight: 0 }
         return {
