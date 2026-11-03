@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 const MODEL_NAMES = Array.from(new Set([
   process.env.GEMINI_MODEL || 'gemini-3.8-flash',
@@ -59,9 +59,9 @@ const generateWithFallback = async (apiKey, prompt) => {
   let lastProviderStatus = 'unknown';
   for (const modelName of MODEL_NAMES) {
     try {
-      const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      return { text: await result.response.text(), modelName };
+      const ai = new GoogleGenAI({ apiKey });
+      const result = await ai.models.generateContent({ model: modelName, contents: prompt });
+      return { text: result.text || '', modelName };
     } catch (error) {
       lastError = error;
       const providerStatus = error?.status || error?.statusCode || error?.response?.status || 'unknown';
