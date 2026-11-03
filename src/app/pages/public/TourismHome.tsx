@@ -1519,24 +1519,23 @@ export default function TourismHome() {
               </div>
 
               {selectedRecommendationContext && (
-                <div className="mb-5 rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-5 shadow-[inset_3px_3px_7px_rgba(163,177,198,0.25),inset_-3px_-3px_7px_rgba(255,255,255,0.62)]">
-                  <div className="flex items-start gap-3">
+                <div className="mb-5 rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-4 shadow-[inset_3px_3px_7px_rgba(163,177,198,0.25),inset_-3px_-3px_7px_rgba(255,255,255,0.62)] sm:p-5">
+                  <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
                     <div className="public-neumorphic-inset flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[#193364]">
                       <Sparkles className="h-5 w-5" strokeWidth={1.8} />
                     </div>
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-[#193364]">Why this place was recommended</h3>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <h3 className="text-lg font-semibold leading-6 text-[#193364]">Why this place was recommended</h3>
                       </div>
                       {recommendationExplanationLoading ? (
-                        <p className="mt-2 text-sm leading-6 text-slate-600">Creating a short explanation from the listing details...</p>
+                        <p className="mt-2 text-justify text-sm leading-6 text-slate-600 [text-wrap:pretty] hyphens-auto" data-ai-text-spacing="justified-even-indent">Creating a short explanation from the listing details...</p>
                       ) : recommendationExplanation ? (
-                        <p className="mt-2 text-sm leading-6 text-slate-700">{recommendationExplanation}</p>
+                        <p className="mt-2 text-justify text-sm leading-6 text-slate-700 [text-wrap:pretty] hyphens-auto" data-ai-text-spacing="justified-even-indent">{recommendationExplanation}</p>
                       ) : (
-                        <p className="mt-2 text-sm leading-6 text-slate-700">{selectedRecommendationContext.reason}</p>
+                        <p className="mt-2 text-justify text-sm leading-6 text-slate-700 [text-wrap:pretty] hyphens-auto" data-ai-text-spacing="justified-even-indent">{selectedRecommendationContext.reason}</p>
                       )}
-                      {recommendationExplanationError && <p className="mt-2 text-xs text-slate-500">{recommendationExplanationError} The recommendation signal is still shown above.</p>}
-                      <p className="mt-3 text-[11px] leading-4 text-slate-500">AI-assisted explanation based only on this public listing and current recommendation signals. It may be incomplete or inaccurate, so please verify important details with the establishment.</p>
+                      {recommendationExplanationError && <p className="mt-2 text-xs leading-5 text-slate-500">{recommendationExplanationError} The recommendation signal is still shown above.</p>}
                     </div>
                   </div>
                 </div>
