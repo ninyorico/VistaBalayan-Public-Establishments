@@ -92,6 +92,7 @@ type RecommendationContext = {
   reason: string
   distance: number | null
   score: number
+  signals?: string[]
 }
 
 type RecommendationEntry = Establishment & RecommendationContext & {
@@ -752,7 +753,7 @@ export default function TourismHome() {
 
   const getSavedRecommendationExplanation = (establishmentId: string) => {
     const cacheKey = `public:recommendation-explanation:${establishmentId}`
-    const persistentCacheKey = `vistabalayan_public_ai_explanation_v3:${establishmentId}`
+    const persistentCacheKey = `vistabalayan_public_ai_explanation_v4:${establishmentId}`
     const cached = getPublicCache<string>(cacheKey)
     if (cached) return cached
     try {
@@ -790,6 +791,7 @@ export default function TourismHome() {
           },
           recommendation: {
             reason: context.reason,
+            signals: context.signals || [],
             distanceKm: context.distance,
           },
         }),
@@ -797,7 +799,7 @@ export default function TourismHome() {
       const result = await response.json().catch(() => ({}))
       if (!response.ok || typeof result.explanation !== 'string') throw new Error(result.error || 'Unable to explain this recommendation')
       const cacheKey = `public:recommendation-explanation:${establishment.id}`
-      const persistentCacheKey = `vistabalayan_public_ai_explanation_v3:${establishment.id}`
+      const persistentCacheKey = `vistabalayan_public_ai_explanation_v4:${establishment.id}`
       setPublicCache(cacheKey, result.explanation, 30 * 24 * 60 * 60_000)
       setRecommendationExplanations((current) => ({ ...current, [establishment.id]: result.explanation }))
       try {
@@ -827,6 +829,7 @@ export default function TourismHome() {
           reason: establishment.reason,
           distance: typeof establishment.distance === 'number' ? establishment.distance : null,
           score: typeof establishment.score === 'number' ? establishment.score : 0,
+          signals: establishment.signals || [],
         })
       }
     })()
@@ -838,6 +841,7 @@ export default function TourismHome() {
           reason: establishment.reason,
           distance: typeof establishment.distance === 'number' ? establishment.distance : null,
           score: typeof establishment.score === 'number' ? establishment.score : 0,
+          signals: Array.isArray(establishment.signals) ? establishment.signals : [],
         }
       : null
     setSelectedRecommendationContext(recommendationContext)
@@ -927,18 +931,24 @@ export default function TourismHome() {
         const distance = userLocation ? routeDistances[est.id] ?? null : null
         const categoryBoost = behavior.categoryClicks[publicCategory] || 0
         const viewedBoost = behavior.viewedIds.includes(est.id) ? 12 : 0
-        const searchBoost = Object.entries(behavior.searchCounts).reduce((boost, [term, count]) => {
-          const matches = `${est.name} ${est.description || ''} ${est.type} ${est.address}`.toLowerCase().includes(term)
-          return boost + (matches ? Math.min(count * 4, 20) : 0)
-        }, 0)
+        const searchMatches = Object.entries(behavior.searchCounts)
+          .filter(([term]) => `${est.name} ${est.description || ''} ${est.type} ${est.address}`.toLowerCase().includes(term))
+          .sort(([, countA], [, countB]) => countB - countA)
+        const searchBoost = searchMatches.reduce((boost, [, count]) => boost + Math.min(count * 4, 20), 0)
         const featuredBoost = est.featured ? 8 : 0
         const roomBoost = est.total_rooms ? Math.min(est.total_rooms / 8, 8) : 0
         const distanceScore = distance === null ? 0 : 100 - distance * 18
         const score = distanceScore + categoryBoost * 7 + viewedBoost + searchBoost + featuredBoost + roomBoost
-        const reason = userLocation && distance !== null
-          ? `${distance.toFixed(1)} km route from your location.`
-          : 'Matches your recent browsing activity.'
-        return { ...est, publicCategory, distance, score, reason }
+        const signals = [
+          ...(distance !== null ? [`Nearby: ${distance.toFixed(1)} km route from your location.`] : []),
+          ...(searchMatches.length > 0 ? [`Matches your search for "${searchMatches[0][0]}".`] : []),
+          ...(categoryBoost > 0 ? [`Fits your interest in ${publicCategory.toLowerCase()} stays.`] : []),
+          ...(viewedBoost > 0 ? ['Related to places you viewed.'] : []),
+        ].slice(0, 2)
+        const reason = signals.length > 0
+          ? signals.join(' ')
+          : `A ${publicCategory.toLowerCase()} listing in Balayan.`
+        return { ...est, publicCategory, distance, score, reason, signals }
       })
       .sort((a, b) => b.score - a.score)
       .slice(0, 3)
