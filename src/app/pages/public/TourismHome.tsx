@@ -925,33 +925,67 @@ export default function TourismHome() {
   }
 
   const recommendations = useMemo(() => {
-    return establishments
+    const viewedIds = new Set(behavior.viewedIds)
+    const viewedCategories = new Set(
+      establishments
+        .filter((est) => viewedIds.has(est.id))
+        .map((est) => getPublicCategory(est.type, est.dot_classification))
+        .filter(Boolean)
+    )
+
+    const scored = establishments
+      .filter((est) => !viewedIds.has(est.id))
       .map((est) => {
         const publicCategory = getPublicCategory(est.type, est.dot_classification) || 'Resort'
         const distance = userLocation ? routeDistances[est.id] ?? null : null
         const categoryBoost = behavior.categoryClicks[publicCategory] || 0
-        const viewedBoost = behavior.viewedIds.includes(est.id) ? 12 : 0
+        const viewedCategoryMatch = viewedCategories.has(publicCategory)
         const searchMatches = Object.entries(behavior.searchCounts)
           .filter(([term]) => `${est.name} ${est.description || ''} ${est.type} ${est.address}`.toLowerCase().includes(term))
           .sort(([, countA], [, countB]) => countB - countA)
         const searchBoost = searchMatches.reduce((boost, [, count]) => boost + Math.min(count * 4, 20), 0)
         const featuredBoost = est.featured ? 8 : 0
         const roomBoost = est.total_rooms ? Math.min(est.total_rooms / 8, 8) : 0
-        const distanceScore = distance === null ? 0 : 100 - distance * 18
-        const score = distanceScore + categoryBoost * 7 + viewedBoost + searchBoost + featuredBoost + roomBoost
+        const distanceScore = distance === null ? 0 : Math.max(0, 100 - distance * 18)
+        const score = distanceScore + categoryBoost * 7 + (viewedCategoryMatch ? 4 : 0) + searchBoost + featuredBoost + roomBoost
         const signals = [
-          ...(distance !== null ? [`Nearby: ${distance.toFixed(1)} km route from your location.`] : []),
-          ...(searchMatches.length > 0 ? [`Matches your search for "${searchMatches[0][0]}".`] : []),
-          ...(categoryBoost > 0 ? [`Fits your interest in ${publicCategory.toLowerCase()} stays.`] : []),
-          ...(viewedBoost > 0 ? ['Related to places you viewed.'] : []),
-        ].slice(0, 2)
-        const reason = signals.length > 0
-          ? signals.join(' ')
-          : `A ${publicCategory.toLowerCase()} listing in Balayan.`
-        return { ...est, publicCategory, distance, score, reason, signals }
+          ...(distance !== null ? [{ key: 'distance', text: `Nearby: ${distance.toFixed(1)} km route from your location.`, weight: distanceScore }] : []),
+          ...(searchMatches.length > 0 ? [{ key: 'search', text: `Matches your search for "${searchMatches[0][0]}".`, weight: searchBoost }] : []),
+          ...(categoryBoost > 0 ? [{ key: 'category', text: `Fits your interest in ${publicCategory.toLowerCase()} stays.`, weight: categoryBoost * 7 }] : []),
+          ...(viewedCategoryMatch ? [{ key: 'viewed-category', text: `Similar to the ${publicCategory.toLowerCase()} places you viewed.`, weight: 4 }] : []),
+          ...(featuredBoost > 0 ? [{ key: 'featured', text: 'A featured destination to discover.', weight: featuredBoost }] : []),
+          ...(roomBoost > 0 ? [{ key: 'rooms', text: 'Offers room options for an overnight stay.', weight: roomBoost }] : []),
+        ].sort((a, b) => b.weight - a.weight)
+        const primarySignal = signals[0] || { key: `category:${publicCategory}`, text: `A ${publicCategory.toLowerCase()} listing in Balayan.`, weight: 0 }
+        return {
+          ...est,
+          publicCategory,
+          distance,
+          score,
+          reason: primarySignal.text,
+          signals: [primarySignal.text],
+          primarySignalKey: primarySignal.key,
+        }
       })
       .sort((a, b) => b.score - a.score)
-      .slice(0, 3)
+
+    const selected: typeof scored = []
+    const usedSignalKeys = new Set<string>()
+    const usedCategories = new Set<string>()
+    for (const candidate of scored) {
+      if (selected.length >= 3) break
+      if (usedSignalKeys.has(candidate.primarySignalKey) || usedCategories.has(candidate.publicCategory)) continue
+      selected.push(candidate)
+      usedSignalKeys.add(candidate.primarySignalKey)
+      usedCategories.add(candidate.publicCategory)
+    }
+    if (selected.length < 3) {
+      for (const candidate of scored) {
+        if (selected.length >= 3) break
+        if (!selected.some((item) => item.id === candidate.id)) selected.push(candidate)
+      }
+    }
+    return selected
   }, [establishments, behavior, userLocation, routeDistances])
 
   useEffect(() => {
