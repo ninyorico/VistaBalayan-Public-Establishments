@@ -752,7 +752,7 @@ export default function TourismHome() {
 
   const getSavedRecommendationExplanation = (establishmentId: string) => {
     const cacheKey = `public:recommendation-explanation:${establishmentId}`
-    const persistentCacheKey = `vistabalayan_public_ai_explanation_v2:${establishmentId}`
+    const persistentCacheKey = `vistabalayan_public_ai_explanation_v3:${establishmentId}`
     const cached = getPublicCache<string>(cacheKey)
     if (cached) return cached
     try {
@@ -764,12 +764,14 @@ export default function TourismHome() {
     }
   }
 
+  const saveRecommendationExplanation = (establishmentId: string, explanation: string) => {
+    setRecommendationExplanations((current) => ({ ...current, [establishmentId]: explanation }))
+    return explanation
+  }
+
   const requestRecommendationExplanation = (establishment: Establishment, context: RecommendationContext) => {
     const cached = getSavedRecommendationExplanation(establishment.id)
-    if (cached) {
-      setRecommendationExplanations((current) => ({ ...current, [establishment.id]: cached }))
-      return Promise.resolve(cached)
-    }
+    if (cached) return Promise.resolve(saveRecommendationExplanation(establishment.id, cached))
 
     const pending = recommendationExplanationRequests.current.get(establishment.id)
     if (pending) return pending
@@ -783,11 +785,6 @@ export default function TourismHome() {
             name: establishment.name,
             category: getPublicCategory(establishment.type, establishment.dot_classification),
             address: establishment.address,
-            description: establishment.description,
-            amenities: establishment.amenities,
-            openingHours: establishment.opening_hours,
-            totalRooms: establishment.total_rooms,
-            featured: establishment.featured,
             averageRating: ratingSummaries[establishment.id]?.average,
             reviewCount: ratingSummaries[establishment.id]?.count,
           },
@@ -800,7 +797,7 @@ export default function TourismHome() {
       const result = await response.json().catch(() => ({}))
       if (!response.ok || typeof result.explanation !== 'string') throw new Error(result.error || 'Unable to explain this recommendation')
       const cacheKey = `public:recommendation-explanation:${establishment.id}`
-      const persistentCacheKey = `vistabalayan_public_ai_explanation_v2:${establishment.id}`
+      const persistentCacheKey = `vistabalayan_public_ai_explanation_v3:${establishment.id}`
       setPublicCache(cacheKey, result.explanation, 30 * 24 * 60 * 60_000)
       setRecommendationExplanations((current) => ({ ...current, [establishment.id]: result.explanation }))
       try {
@@ -808,7 +805,7 @@ export default function TourismHome() {
       } catch {
         // The in-memory cache still prevents duplicate requests during this visit.
       }
-      return result.explanation as string
+      return saveRecommendationExplanation(establishment.id, result.explanation as string)
     })()
       .catch((error) => {
         const message = error instanceof Error ? error.message : 'Unable to create an explanation right now.'
@@ -939,8 +936,8 @@ export default function TourismHome() {
         const distanceScore = distance === null ? 0 : 100 - distance * 18
         const score = distanceScore + categoryBoost * 7 + viewedBoost + searchBoost + featuredBoost + roomBoost
         const reason = userLocation && distance !== null
-          ? `${distance.toFixed(1)} km from your location, with a match to your browsing pattern.`
-          : 'Recommended from your browsing pattern and Balayan travel interests.'
+          ? `${distance.toFixed(1)} km route from your location.`
+          : 'Matches your recent browsing activity.'
         return { ...est, publicCategory, distance, score, reason }
       })
       .sort((a, b) => b.score - a.score)
@@ -948,10 +945,10 @@ export default function TourismHome() {
   }, [establishments, behavior, userLocation, routeDistances])
 
   useEffect(() => {
-    if (recommendations.length > 0) {
+    if (recommendations.length > 0 && (window.innerWidth >= 1024 || mobileDiscoveryPanel === 'recommendations')) {
       prefetchRecommendationExplanations()
     }
-  }, [recommendations])
+  }, [recommendations, mobileDiscoveryPanel])
 
   const nearestStays = useMemo(() => {
     if (!userLocation) {
@@ -1108,7 +1105,11 @@ export default function TourismHome() {
                       {recommendations.map((est) => (
                         <button key={est.id} type="button" onClick={() => openDetails(est)} className="w-full rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-3 text-left transition hover:bg-[#F5F8FF]">
                           <p className="truncate font-semibold text-[#193364]">{est.name}</p>
-                          <p className="mt-1 text-xs leading-5 text-[#323232]">{recommendationExplanations[est.id] || 'Preparing an explanation from this listing’s details and your discovery signals…'}</p>
+                          <RecommendationExplanationPreview
+                            explanation={recommendationExplanations[est.id]}
+                            fallback={est.reason}
+                            loading={recommendationExplanationRequests.current.has(est.id)}
+                          />
                         </button>
                       ))}
                     </div>
@@ -1355,7 +1356,11 @@ export default function TourismHome() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold text-[#193364]">{est.name}</p>
-                        <p className="mt-1 text-sm leading-5 text-[#323232]">{est.reason}</p>
+                        <RecommendationExplanationPreview
+                          explanation={recommendationExplanations[est.id]}
+                          fallback={est.reason}
+                          loading={recommendationExplanationRequests.current.has(est.id)}
+                        />
                       </div>
                     </div>
                   </button>
@@ -1701,6 +1706,22 @@ export default function TourismHome() {
         </div>
       </footer>
     </main>
+  )
+}
+
+function RecommendationExplanationPreview({ explanation, fallback, loading }: { explanation?: string; fallback: string; loading: boolean }) {
+  const text = loading ? 'Preparing a concise explanation...' : explanation || fallback
+
+  return (
+    <div className="mt-2">
+      <div className="relative max-h-11 overflow-hidden pr-1 text-sm leading-5 text-[#323232]">
+        <p>{text}</p>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-[#E5E8E1] to-transparent" />
+      </div>
+      <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#193364]">
+        Show more <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
+      </span>
+    </div>
   )
 }
 
