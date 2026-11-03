@@ -809,12 +809,6 @@ export default function TourismHome() {
     })()
   }
 
-  useEffect(() => {
-    if (mobileDiscoveryPanel === 'recommendations') {
-      prefetchRecommendationExplanations()
-    }
-  }, [mobileDiscoveryPanel, recommendations])
-
   const openDetails = (establishment: Establishment & Partial<RecommendationContext>) => {
     const recommendationContext = typeof establishment.reason === 'string'
       ? {
@@ -922,6 +916,12 @@ export default function TourismHome() {
       .sort((a, b) => b.score - a.score)
       .slice(0, 3)
   }, [establishments, behavior, userLocation, routeDistances])
+
+  useEffect(() => {
+    if (mobileDiscoveryPanel === 'recommendations') {
+      prefetchRecommendationExplanations()
+    }
+  }, [mobileDiscoveryPanel, recommendations])
 
   const nearestStays = useMemo(() => {
     if (!userLocation) {
