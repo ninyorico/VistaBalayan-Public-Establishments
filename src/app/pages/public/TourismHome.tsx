@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Bed,
   Building2,
@@ -405,6 +405,7 @@ export default function TourismHome() {
   const [recommendationExplanation, setRecommendationExplanation] = useState('')
   const [recommendationExplanationLoading, setRecommendationExplanationLoading] = useState(false)
   const [recommendationExplanationError, setRecommendationExplanationError] = useState('')
+  const recommendationExplanationRequests = useRef(new Map<string, Promise<string | null>>())
 
   useEffect(() => {
     const modalOpen = Boolean(mobileDiscoveryPanel || selectedEstablishment || reportingReview)
@@ -729,26 +730,28 @@ export default function TourismHome() {
     saveBehavior(next)
   }
 
-  const explainRecommendation = async (establishment: Establishment, context: RecommendationContext) => {
-    const cacheKey = `public:recommendation-explanation:${establishment.id}`
-    const persistentCacheKey = `vistabalayan_public_ai_explanation_v1:${establishment.id}`
+  const getSavedRecommendationExplanation = (establishmentId: string) => {
+    const cacheKey = `public:recommendation-explanation:${establishmentId}`
+    const persistentCacheKey = `vistabalayan_public_ai_explanation_v1:${establishmentId}`
     const cached = getPublicCache<string>(cacheKey)
-    const saved = cached || (() => {
-      try {
-        return window.localStorage.getItem(persistentCacheKey)
-      } catch {
-        return null
-      }
-    })()
-    if (saved) {
-      setPublicCache(cacheKey, saved, 30 * 24 * 60 * 60_000)
-      setRecommendationExplanation(saved)
-      return
-    }
-
-    setRecommendationExplanationLoading(true)
-    setRecommendationExplanationError('')
+    if (cached) return cached
     try {
+      const saved = window.localStorage.getItem(persistentCacheKey)
+      if (saved) setPublicCache(cacheKey, saved, 30 * 24 * 60 * 60_000)
+      return saved
+    } catch {
+      return null
+    }
+  }
+
+  const requestRecommendationExplanation = (establishment: Establishment, context: RecommendationContext) => {
+    const cached = getSavedRecommendationExplanation(establishment.id)
+    if (cached) return Promise.resolve(cached)
+
+    const pending = recommendationExplanationRequests.current.get(establishment.id)
+    if (pending) return pending
+
+    const request = (async () => {
       const response = await fetch('/api/recommendation-explanation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -773,18 +776,37 @@ export default function TourismHome() {
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok || typeof result.explanation !== 'string') throw new Error(result.error || 'Unable to explain this recommendation')
+      const cacheKey = `public:recommendation-explanation:${establishment.id}`
+      const persistentCacheKey = `vistabalayan_public_ai_explanation_v1:${establishment.id}`
       setPublicCache(cacheKey, result.explanation, 30 * 24 * 60 * 60_000)
       try {
         window.localStorage.setItem(persistentCacheKey, result.explanation)
       } catch {
         // The in-memory cache still prevents duplicate requests during this visit.
       }
-      setRecommendationExplanation(result.explanation)
-    } catch (error) {
-      setRecommendationExplanationError(error instanceof Error ? error.message : 'Unable to explain this recommendation')
-    } finally {
-      setRecommendationExplanationLoading(false)
-    }
+      return result.explanation as string
+    })()
+      .catch((error) => {
+        console.warn('Recommendation explanation unavailable:', error instanceof Error ? error.message : 'unknown error')
+        return null
+      })
+      .finally(() => recommendationExplanationRequests.current.delete(establishment.id))
+
+    recommendationExplanationRequests.current.set(establishment.id, request)
+    return request
+  }
+
+  const prefetchRecommendationExplanations = () => {
+    setRecommendationExplanationError('')
+    void (async () => {
+      for (const establishment of recommendations) {
+        await requestRecommendationExplanation(establishment, {
+          reason: establishment.reason,
+          distance: typeof establishment.distance === 'number' ? establishment.distance : null,
+          score: typeof establishment.score === 'number' ? establishment.score : 0,
+        })
+      }
+    })()
   }
 
   const openDetails = (establishment: Establishment & Partial<RecommendationContext>) => {
@@ -796,9 +818,18 @@ export default function TourismHome() {
         }
       : null
     setSelectedRecommendationContext(recommendationContext)
-    setRecommendationExplanation('')
+    setRecommendationExplanation(recommendationContext ? getSavedRecommendationExplanation(establishment.id) || '' : '')
     setRecommendationExplanationError('')
-    if (recommendationContext) void explainRecommendation(establishment, recommendationContext)
+    setRecommendationExplanationLoading(Boolean(recommendationContext && recommendationExplanationRequests.current.has(establishment.id)))
+    if (recommendationContext) {
+      const pending = recommendationExplanationRequests.current.get(establishment.id)
+      if (pending) {
+        void pending.then((explanation) => {
+          setRecommendationExplanation(explanation || '')
+          setRecommendationExplanationLoading(false)
+        })
+      }
+    }
     setSelectedEstablishment(establishment)
     setSelectedPhotoIndex(0)
     setShowSelectedMap(false)
@@ -987,7 +1018,7 @@ export default function TourismHome() {
                 </Button>
                 <Button
                   type="button"
-                  onClick={() => setMobileDiscoveryPanel('recommendations')}
+                  onClick={() => { setMobileDiscoveryPanel('recommendations'); prefetchRecommendationExplanations() }}
                   aria-expanded={mobileDiscoveryPanel === 'recommendations'}
                   aria-label="Show personalized picks"
                   className="h-11 justify-center rounded-2xl bg-[#E5E8E1] px-3 text-sm font-semibold text-[#193364] shadow-[inset_3px_3px_7px_rgba(163,177,198,0.35),inset_-3px_-3px_7px_rgba(255,255,255,0.65)] hover:bg-[#F5F8FF] active:translate-y-[1px]"
