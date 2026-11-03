@@ -764,8 +764,8 @@ export default function TourismHome() {
   }
 
   const getSavedRecommendationExplanation = (establishmentId: string) => {
-    const cacheKey = `public:recommendation-explanation-v6:${establishmentId}`
-    const persistentCacheKey = `vistabalayan_public_ai_explanation_v6:${establishmentId}`
+    const cacheKey = `public:recommendation-explanation-v7:${establishmentId}`
+    const persistentCacheKey = `vistabalayan_public_ai_explanation_v7:${establishmentId}`
     const cached = getPublicCache<string>(cacheKey)
     if (cached) return cached
     try {
@@ -810,14 +810,16 @@ export default function TourismHome() {
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok || typeof result.explanation !== 'string') throw new Error(result.error || 'Unable to explain this recommendation')
-      const cacheKey = `public:recommendation-explanation-v6:${establishment.id}`
-      const persistentCacheKey = `vistabalayan_public_ai_explanation_v6:${establishment.id}`
-      setPublicCache(cacheKey, result.explanation, 30 * 24 * 60 * 60_000)
+      const cacheKey = `public:recommendation-explanation-v7:${establishment.id}`
+      const persistentCacheKey = `vistabalayan_public_ai_explanation_v7:${establishment.id}`
       setRecommendationExplanations((current) => ({ ...current, [establishment.id]: result.explanation }))
-      try {
-        window.localStorage.setItem(persistentCacheKey, result.explanation)
-      } catch {
-        // The in-memory cache still prevents duplicate requests during this visit.
+      if (!result.fallback) {
+        setPublicCache(cacheKey, result.explanation, 30 * 24 * 60 * 60_000)
+        try {
+          window.localStorage.setItem(persistentCacheKey, result.explanation)
+        } catch {
+          // The in-memory cache still prevents duplicate requests during this visit.
+        }
       }
       return saveRecommendationExplanation(establishment.id, result.explanation as string)
     })()
