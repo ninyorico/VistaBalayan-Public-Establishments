@@ -29,6 +29,7 @@ import { Input } from '../../components/ui/input'
 import { Separator } from '../../components/ui/separator'
 import { supabase } from '../../../lib/supabase'
 import { hasPreferencesConsent } from '../../../lib/consent'
+import { getPublicCache, invalidatePublicCache, setPublicCache } from '../../../lib/publicCache'
 
 interface Establishment {
   id: string
@@ -65,6 +66,18 @@ interface RatingSummary {
   visitorRating?: number
 }
 
+type PublicRatingSummaryRow = {
+  establishment_id: string
+  average_rating: number
+  rating_count: number
+  one_star_count?: number
+  two_star_count?: number
+  three_star_count?: number
+  four_star_count?: number
+  five_star_count?: number
+  comment_count?: number
+}
+
 interface RatingReview {
   id?: string | null
   establishment_id: string
@@ -91,6 +104,10 @@ const RATING_VISITOR_KEY = 'vistabalayan_public_rating_visitor_v1'
 const REVIEWER_NAME_KEY = 'vistabalayan_public_reviewer_name_v1'
 const LEGACY_LOCAL_RATINGS_KEY = 'vistabalayan_public_local_ratings_v1'
 const LEGACY_REVIEW_PREFIX = 'Reviewed by '
+const PUBLIC_ESTABLISHMENTS_CACHE_KEY = 'public:establishments:v1'
+const PUBLIC_ESTABLISHMENTS_CACHE_TTL = 60_000
+const PUBLIC_RATING_SUMMARY_CACHE_TTL = 30_000
+const PUBLIC_REVIEW_CACHE_TTL = 30_000
 const emptyBreakdown: RatingBreakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
 
 const createEmptyRatingSummary = (): RatingSummary => ({ average: 0, count: 0, breakdown: { ...emptyBreakdown }, commentCount: 0 })
@@ -482,14 +499,18 @@ export default function TourismHome() {
 
   const fetchEstablishments = async (visitorToken = ratingVisitorToken) => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('establishments')
-      .select('*')
-      .eq('status', 'active')
-      .order('name')
+    const cached = getPublicCache<Establishment[]>(PUBLIC_ESTABLISHMENTS_CACHE_KEY)
+    const result = cached
+      ? { data: cached, error: null }
+      : await supabase
+        .from('establishments')
+        .select('*')
+        .eq('status', 'active')
+        .order('name')
 
-    if (!error && data) {
-      const publicStays = data.filter((est) => getPublicCategory(est.type, est.dot_classification)).map(normalizePublicEstablishment)
+    if (!result.error && result.data) {
+      if (!cached) setPublicCache(PUBLIC_ESTABLISHMENTS_CACHE_KEY, result.data, PUBLIC_ESTABLISHMENTS_CACHE_TTL)
+      const publicStays = result.data.filter((est) => getPublicCategory(est.type, est.dot_classification)).map(normalizePublicEstablishment)
       setEstablishments(publicStays)
       setFiltered(publicStays)
       await fetchRatingSummaries(publicStays.map((est) => est.id), visitorToken)
@@ -500,40 +521,56 @@ export default function TourismHome() {
   const fetchRatingSummaries = async (establishmentIds: string[], visitorToken = ratingVisitorToken) => {
     if (establishmentIds.length === 0) return
 
-    const { data, error } = await supabase
-      .from('establishment_rating_summaries')
-      .select('establishment_id, average_rating, rating_count, one_star_count, two_star_count, three_star_count, four_star_count, five_star_count, comment_count')
-      .in('establishment_id', establishmentIds)
+    const cacheKey = `public:rating-summaries:${[...establishmentIds].sort().join(',')}`
+    const cached = getPublicCache<PublicRatingSummaryRow[]>(cacheKey)
+    const result = cached
+      ? { data: cached, error: null }
+      : await supabase
+        .from('establishment_rating_summaries')
+        .select('establishment_id, average_rating, rating_count, one_star_count, two_star_count, three_star_count, four_star_count, five_star_count, comment_count')
+        .in('establishment_id', establishmentIds)
 
-    if (!error && data) {
+    if (!result.error && result.data) {
+      if (!cached) setPublicCache(cacheKey, result.data, PUBLIC_RATING_SUMMARY_CACHE_TTL)
       setRatingSummaries((current) => ({
         ...current,
-        ...summarizeRatings(data),
+        ...summarizeRatings(result.data),
       }))
     }
   }
 
   const fetchRatingReviews = async (establishmentId: string) => {
-    let { data, error } = await supabase
-      .from('establishment_rating_reviews')
-      .select('id, establishment_id, rating, comment, reviewer_name, photo_path, created_at')
-      .eq('establishment_id', establishmentId)
-      .order('created_at', { ascending: false })
-      .limit(50)
+    const cacheKey = `public:rating-reviews:${establishmentId}`
+    const cached = getPublicCache<RatingReview[]>(cacheKey)
+    let data = cached
+    let error: { message: string } | null = null
 
-    if (error) {
-      const legacyResult = await supabase
+    if (!cached) {
+      const result = await supabase
         .from('establishment_rating_reviews')
-        .select('establishment_id, rating, comment, created_at')
+        .select('id, establishment_id, rating, comment, reviewer_name, photo_path, created_at')
         .eq('establishment_id', establishmentId)
         .order('created_at', { ascending: false })
         .limit(50)
-      data = (legacyResult.data || []).map((item) => ({ id: null, ...item, reviewer_name: null, photo_path: null }))
-      error = legacyResult.error
+      data = result.data as RatingReview[] | null
+      error = result.error
+
+      if (error) {
+        const legacyResult = await supabase
+          .from('establishment_rating_reviews')
+          .select('establishment_id, rating, comment, created_at')
+          .eq('establishment_id', establishmentId)
+          .order('created_at', { ascending: false })
+          .limit(50)
+        data = (legacyResult.data || []).map((item) => ({ id: null, ...item, reviewer_name: null, photo_path: null }))
+        error = legacyResult.error
+      }
     }
 
     if (!error && data) {
-      setRatingReviews((current) => ({ ...current, [establishmentId]: sortReviewsForDisplay(data) }))
+      const reviews = sortReviewsForDisplay(data)
+      if (!cached) setPublicCache(cacheKey, reviews, PUBLIC_REVIEW_CACHE_TTL)
+      setRatingReviews((current) => ({ ...current, [establishmentId]: reviews }))
     }
   }
 
@@ -594,6 +631,8 @@ export default function TourismHome() {
       setReviewComment('')
       setReviewPhoto(null)
       setReviewPhotoPreview('')
+      invalidatePublicCache(`public:rating-reviews:${selectedEstablishment.id}`)
+      invalidatePublicCache(`public:rating-summaries:${[...establishments.map((est) => est.id)].sort().join(',')}`)
       await fetchRatingSummaries(establishments.map((est) => est.id), visitorToken)
       await fetchRatingReviews(selectedEstablishment.id)
     }
