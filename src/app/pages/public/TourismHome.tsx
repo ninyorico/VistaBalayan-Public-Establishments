@@ -769,8 +769,8 @@ export default function TourismHome() {
   }
 
   const getSavedRecommendationExplanation = (establishmentId: string) => {
-    const cacheKey = `public:recommendation-explanation-v8:${establishmentId}`
-    const persistentCacheKey = `vistabalayan_public_ai_explanation_v8:${establishmentId}`
+    const cacheKey = `public:recommendation-explanation-v9:${establishmentId}`
+    const persistentCacheKey = `vistabalayan_public_ai_explanation_v9:${establishmentId}`
     const cached = getPublicCache<string>(cacheKey)
     if (cached) return cached
     try {
@@ -815,8 +815,8 @@ export default function TourismHome() {
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok || typeof result.explanation !== 'string') throw new Error(result.error || 'Unable to explain this recommendation')
-      const cacheKey = `public:recommendation-explanation-v8:${establishment.id}`
-      const persistentCacheKey = `vistabalayan_public_ai_explanation_v8:${establishment.id}`
+      const cacheKey = `public:recommendation-explanation-v9:${establishment.id}`
+      const persistentCacheKey = `vistabalayan_public_ai_explanation_v9:${establishment.id}`
       setRecommendationExplanations((current) => ({ ...current, [establishment.id]: result.explanation }))
       if (!result.fallback) {
         setPublicCache(cacheKey, result.explanation, 30 * 24 * 60 * 60_000)
