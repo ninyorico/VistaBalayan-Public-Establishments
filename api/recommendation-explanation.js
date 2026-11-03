@@ -1,9 +1,10 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const MODEL_NAMES = Array.from(new Set([
-  process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite',
+  process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
+  'gemini-3.6-flash',
+  'gemini-2.5-flash-lite',
   'gemini-2.5-flash',
-  'gemini-2.0-flash',
 ]));
 
 const requestWindows = new Map();
@@ -53,6 +54,8 @@ const generateWithFallback = async (apiKey, prompt) => {
       return { text: await result.response.text(), modelName };
     } catch (error) {
       lastError = error;
+      const providerStatus = error?.status || error?.statusCode || error?.response?.status || 'unknown';
+      console.error('Public recommendation explanation model attempt failed', { model: modelName, providerStatus, retryable: isRetryable(error) });
       if (!isRetryable(error)) throw error;
     }
   }
