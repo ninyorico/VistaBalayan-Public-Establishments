@@ -752,8 +752,8 @@ export default function TourismHome() {
   }
 
   const getSavedRecommendationExplanation = (establishmentId: string) => {
-    const cacheKey = `public:recommendation-explanation-v5:${establishmentId}`
-    const persistentCacheKey = `vistabalayan_public_ai_explanation_v5:${establishmentId}`
+    const cacheKey = `public:recommendation-explanation-v6:${establishmentId}`
+    const persistentCacheKey = `vistabalayan_public_ai_explanation_v6:${establishmentId}`
     const cached = getPublicCache<string>(cacheKey)
     if (cached) return cached
     try {
@@ -798,8 +798,8 @@ export default function TourismHome() {
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok || typeof result.explanation !== 'string') throw new Error(result.error || 'Unable to explain this recommendation')
-      const cacheKey = `public:recommendation-explanation-v5:${establishment.id}`
-      const persistentCacheKey = `vistabalayan_public_ai_explanation_v5:${establishment.id}`
+      const cacheKey = `public:recommendation-explanation-v6:${establishment.id}`
+      const persistentCacheKey = `vistabalayan_public_ai_explanation_v6:${establishment.id}`
       setPublicCache(cacheKey, result.explanation, 30 * 24 * 60 * 60_000)
       setRecommendationExplanations((current) => ({ ...current, [establishment.id]: result.explanation }))
       try {
@@ -963,7 +963,7 @@ export default function TourismHome() {
           distance,
           score,
           reason: primarySignal.text,
-          signals: [primarySignal.text],
+          signals: signals.slice(0, 3).map((signal) => signal.text),
           primarySignalKey: primarySignal.key,
         }
       })
