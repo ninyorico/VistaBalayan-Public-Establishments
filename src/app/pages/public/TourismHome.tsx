@@ -94,6 +94,10 @@ type RecommendationContext = {
   score: number
 }
 
+type RecommendationEntry = Establishment & RecommendationContext & {
+  publicCategory: string
+}
+
 interface UserLocation {
   latitude: number
   longitude: number
@@ -103,6 +107,7 @@ interface BehaviorProfile {
   viewedIds: string[]
   categoryClicks: Record<string, number>
   searches: string[]
+  searchCounts: Record<string, number>
 }
 
 const BEHAVIOR_KEY = 'vistabalayan_public_behavior_v1'
@@ -139,6 +144,7 @@ const emptyBehavior: BehaviorProfile = {
   viewedIds: [],
   categoryClicks: {},
   searches: [],
+  searchCounts: {},
 }
 
 const getPublicCategory = (type = '', dotClassification: string | null = '') => {
@@ -230,7 +236,14 @@ const readBehavior = (): BehaviorProfile => {
   if (!hasPreferencesConsent()) return emptyBehavior
   try {
     const stored = window.localStorage.getItem(BEHAVIOR_KEY)
-    return stored ? { ...emptyBehavior, ...JSON.parse(stored) } : emptyBehavior
+    return stored
+      ? {
+          ...emptyBehavior,
+          ...JSON.parse(stored),
+          categoryClicks: { ...emptyBehavior.categoryClicks, ...(JSON.parse(stored).categoryClicks || {}) },
+          searchCounts: { ...emptyBehavior.searchCounts, ...(JSON.parse(stored).searchCounts || {}) },
+        }
+      : emptyBehavior
   } catch {
     return emptyBehavior
   }
@@ -396,6 +409,8 @@ export default function TourismHome() {
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'ready' | 'blocked'>('idle')
   const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [mobileDiscoveryPanel, setMobileDiscoveryPanel] = useState<'recommendations' | 'nearest' | null>(null)
+  const [discoveryMode, setDiscoveryMode] = useState<'default' | 'expanded'>('default')
+  const [recommendationExplanations, setRecommendationExplanations] = useState<Record<string, string>>({})
   const [showSelectedMap, setShowSelectedMap] = useState(false)
   const [reportingReview, setReportingReview] = useState<RatingReview | null>(null)
   const [reportReason, setReportReason] = useState<typeof reviewReportOptions[number]['value'] | ''>('')
@@ -707,9 +722,14 @@ export default function TourismHome() {
   useEffect(() => {
     if (!searchTerm.trim()) return
     const handle = window.setTimeout(() => {
+      const term = searchTerm.trim()
       const next = {
         ...behavior,
-        searches: [searchTerm.trim(), ...behavior.searches.filter((s) => s !== searchTerm.trim())].slice(0, 8),
+        searches: [term, ...behavior.searches.filter((s) => s !== term)].slice(0, 8),
+        searchCounts: {
+          ...behavior.searchCounts,
+          [term.toLowerCase()]: (behavior.searchCounts[term.toLowerCase()] || 0) + 1,
+        },
       }
       setBehavior(next)
       saveBehavior(next)
@@ -746,7 +766,10 @@ export default function TourismHome() {
 
   const requestRecommendationExplanation = (establishment: Establishment, context: RecommendationContext) => {
     const cached = getSavedRecommendationExplanation(establishment.id)
-    if (cached) return Promise.resolve(cached)
+    if (cached) {
+      setRecommendationExplanations((current) => ({ ...current, [establishment.id]: cached }))
+      return Promise.resolve(cached)
+    }
 
     const pending = recommendationExplanationRequests.current.get(establishment.id)
     if (pending) return pending
@@ -779,6 +802,7 @@ export default function TourismHome() {
       const cacheKey = `public:recommendation-explanation:${establishment.id}`
       const persistentCacheKey = `vistabalayan_public_ai_explanation_v2:${establishment.id}`
       setPublicCache(cacheKey, result.explanation, 30 * 24 * 60 * 60_000)
+      setRecommendationExplanations((current) => ({ ...current, [establishment.id]: result.explanation }))
       try {
         window.localStorage.setItem(persistentCacheKey, result.explanation)
       } catch {
@@ -894,6 +918,11 @@ export default function TourismHome() {
     )
   }
 
+  const openDiscovery = () => {
+    setDiscoveryMode((current) => current === 'expanded' ? 'default' : 'expanded')
+    if (!userLocation && locationStatus !== 'loading') requestLocation()
+  }
+
   const recommendations = useMemo(() => {
     return establishments
       .map((est) => {
@@ -901,11 +930,10 @@ export default function TourismHome() {
         const distance = userLocation ? routeDistances[est.id] ?? null : null
         const categoryBoost = behavior.categoryClicks[publicCategory] || 0
         const viewedBoost = behavior.viewedIds.includes(est.id) ? 12 : 0
-        const searchBoost = behavior.searches.some((term) =>
-          `${est.name} ${est.description || ''} ${est.type}`.toLowerCase().includes(term.toLowerCase())
-        )
-          ? 10
-          : 0
+        const searchBoost = Object.entries(behavior.searchCounts).reduce((boost, [term, count]) => {
+          const matches = `${est.name} ${est.description || ''} ${est.type} ${est.address}`.toLowerCase().includes(term)
+          return boost + (matches ? Math.min(count * 4, 20) : 0)
+        }, 0)
         const featuredBoost = est.featured ? 8 : 0
         const roomBoost = est.total_rooms ? Math.min(est.total_rooms / 8, 8) : 0
         const distanceScore = distance === null ? 0 : 100 - distance * 18
@@ -1042,42 +1070,67 @@ export default function TourismHome() {
             <CardContent className="p-3 !pb-3">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium text-[#323232]">Personalized picks</p>
-                  <h2 className="mt-1 text-2xl font-semibold tracking-[-0.025em]">Where to stay next</h2>
-                  <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                    <Sparkles className="h-3.5 w-3.5 text-[#193364]" strokeWidth={1.8} />
-                    AI-assisted explanations are available for these picks.
-                  </p>
+                  <p className="text-sm font-medium text-[#323232]">{discoveryMode === 'expanded' ? 'Discovery picks' : 'Popular picks for you'}</p>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-[-0.025em]">{discoveryMode === 'expanded' ? 'Near you and matched to you' : 'Where to stay next'}</h2>
                 </div>
                 <Button
                   type="button"
-                  onClick={requestLocation}
+                  onClick={openDiscovery}
                   disabled={locationStatus === 'loading'}
-                  className="rounded-2xl bg-[#193364] px-4 py-2 text-sm font-semibold text-white shadow-[5px_5px_10px_rgba(163,177,198,0.60),-5px_-5px_10px_rgba(255,255,255,0.52)] hover:bg-[#193364] active:translate-y-[1px] disabled:cursor-wait disabled:opacity-80"
+                  className="shrink-0 rounded-2xl bg-[#193364] px-4 py-2 text-sm font-semibold text-white shadow-[5px_5px_10px_rgba(163,177,198,0.60),-5px_-5px_10px_rgba(255,255,255,0.52)] hover:bg-[#193364] active:translate-y-[1px] disabled:cursor-wait disabled:opacity-80"
                 >
                   {locationStatus === 'loading' && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />}
-                  {locationStatus === 'loading' ? 'Locating...' : locationStatus === 'ready' ? 'Location on' : 'Use location'}
+                  {locationStatus === 'loading' ? 'Finding...' : discoveryMode === 'expanded' ? 'Show less' : 'Explore nearby'}
                 </Button>
               </div>
-              <div className="space-y-3">
-                {recommendations.map((est) => (
-                  <button
-                    key={est.id}
-                    onClick={() => openDetails(est)}
-                    className="w-full rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-4 text-left transition hover:bg-[#F5F8FF] active:translate-y-[1px]"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="public-neumorphic-inset mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl text-[#193364]">
-                        {React.createElement(getCategoryIcon(est.type), { className: 'h-5 w-5', strokeWidth: 1.8 })}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold text-[#193364]">{est.name}</p>
-                        <p className="mt-1 text-sm leading-5 text-[#323232]">{est.reason}</p>
-                      </div>
+              {discoveryMode === 'expanded' ? (
+                <div className="space-y-5">
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-sm font-semibold text-[#193364]">Nearest stays</p>
+                      {locationStatus === 'blocked' && <span className="text-xs text-amber-700">Location unavailable</span>}
                     </div>
-                  </button>
-                ))}
-              </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {nearestStays.slice(0, 4).map((est) => (
+                        <button key={est.id} type="button" onClick={() => openDetails(est)} className="rounded-2xl border border-[#AFB3B5]/70 bg-[#F5F8FF] p-3 text-left transition hover:bg-[#E5E8E1]">
+                          <p className="truncate font-semibold text-[#193364]">{est.name}</p>
+                          <p className="mt-1 text-xs text-slate-500">{getPublicCategory(est.type, est.dot_classification)} · {est.distance === null ? 'Pin available' : `${est.distance.toFixed(1)} km route`}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-[#193364]" strokeWidth={1.8} />
+                      <p className="text-sm font-semibold text-[#193364]">AI-assisted picks</p>
+                    </div>
+                    <div className="space-y-2">
+                      {recommendations.map((est) => (
+                        <button key={est.id} type="button" onClick={() => openDetails(est)} className="w-full rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-3 text-left transition hover:bg-[#F5F8FF]">
+                          <p className="truncate font-semibold text-[#193364]">{est.name}</p>
+                          <p className="mt-1 text-xs leading-5 text-[#323232]">{recommendationExplanations[est.id] || 'Preparing an explanation from this listing’s details and your discovery signals…'}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recommendations.map((est) => (
+                    <button key={est.id} onClick={() => openDetails(est)} className="w-full rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-4 text-left transition hover:bg-[#F5F8FF] active:translate-y-[1px]">
+                      <div className="flex items-start gap-3">
+                        <div className="public-neumorphic-inset mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl text-[#193364]">
+                          {React.createElement(getCategoryIcon(est.type), { className: 'h-5 w-5', strokeWidth: 1.8 })}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-[#193364]">{est.name}</p>
+                          <p className="mt-1 text-xs text-slate-500">{est.publicCategory}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -1288,7 +1341,7 @@ export default function TourismHome() {
 
             {mobileDiscoveryPanel === 'recommendations' ? (
               <div className="space-y-3">
-                <p className="text-sm leading-5 text-slate-600">Personalized suggestions based on your browsing pattern and travel interests. Explanations are AI-assisted and based on the public listing details shown here.</p>
+                <p className="text-sm leading-5 text-slate-600">Recommendations use your saved browsing signals. Open a pick to see its AI explanation.</p>
                 {recommendations.map((est) => (
                   <button
                     key={est.id}
