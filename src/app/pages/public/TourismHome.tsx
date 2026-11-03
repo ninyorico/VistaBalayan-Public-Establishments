@@ -1061,13 +1061,16 @@ export default function TourismHome() {
                 </Button>
                 <Button
                   type="button"
-                  onClick={() => setMobileDiscoveryPanel('recommendations')}
+                  onClick={() => {
+                    setMobileDiscoveryPanel('recommendations')
+                    if (!userLocation && locationStatus !== 'loading') requestLocation()
+                  }}
                   aria-expanded={mobileDiscoveryPanel === 'recommendations'}
                   aria-label="Show personalized picks"
                   className="h-11 justify-center rounded-2xl bg-[#E5E8E1] px-3 text-sm font-semibold text-[#193364] shadow-[inset_3px_3px_7px_rgba(163,177,198,0.35),inset_-3px_-3px_7px_rgba(255,255,255,0.65)] hover:bg-[#F5F8FF] active:translate-y-[1px]"
                 >
                   <Sparkles className="h-4 w-4" strokeWidth={1.8} />
-                  For you
+                  AI-assisted recommendations
                 </Button>
               </div>
             </Card>
@@ -1087,29 +1090,15 @@ export default function TourismHome() {
                   className="shrink-0 rounded-2xl bg-[#193364] px-4 py-2 text-sm font-semibold text-white shadow-[5px_5px_10px_rgba(163,177,198,0.60),-5px_-5px_10px_rgba(255,255,255,0.52)] hover:bg-[#193364] active:translate-y-[1px] disabled:cursor-wait disabled:opacity-80"
                 >
                   {locationStatus === 'loading' && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />}
-                  {locationStatus === 'loading' ? 'Finding...' : discoveryMode === 'expanded' ? 'Show less' : 'Explore nearby'}
+                  {locationStatus === 'loading' ? 'Finding...' : discoveryMode === 'expanded' ? 'Show less' : 'AI-assisted recommendations'}
                 </Button>
               </div>
               {discoveryMode === 'expanded' ? (
-                <div className="space-y-5">
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-[#193364]">Nearest stays</p>
-                      {locationStatus === 'blocked' && <span className="text-xs text-amber-700">Location unavailable</span>}
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {nearestStays.slice(0, 4).map((est) => (
-                        <button key={est.id} type="button" onClick={() => openDetails(est)} className="rounded-2xl border border-[#AFB3B5]/70 bg-[#F5F8FF] p-3 text-left transition hover:bg-[#E5E8E1]">
-                          <p className="truncate font-semibold text-[#193364]">{est.name}</p>
-                          <p className="mt-1 text-xs text-slate-500">{getPublicCategory(est.type, est.dot_classification)} · {est.distance === null ? 'Pin available' : `${est.distance.toFixed(1)} km route`}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                <div className="space-y-3">
                   <div>
                     <div className="mb-2 flex items-center gap-2">
                       <Sparkles className="h-4 w-4 text-[#193364]" strokeWidth={1.8} />
-                      <p className="text-sm font-semibold text-[#193364]">AI-assisted picks</p>
+                      <p className="text-sm font-semibold text-[#193364]">AI-assisted recommendations</p>
                     </div>
                     <div className="space-y-2">
                       {recommendations.map((est) => (
@@ -1352,7 +1341,7 @@ export default function TourismHome() {
 
             {mobileDiscoveryPanel === 'recommendations' ? (
               <div className="space-y-3">
-                <p className="text-sm leading-5 text-slate-600">Recommendations use your saved browsing signals. Open a pick to see its AI explanation.</p>
+                <p className="text-sm leading-5 text-slate-600">AI-assisted recommendations of nearby tourist establishments based on your searches, location, or preferences. Open a pick to see the explanation.</p>
                 {recommendations.map((est) => (
                   <button
                     key={est.id}
