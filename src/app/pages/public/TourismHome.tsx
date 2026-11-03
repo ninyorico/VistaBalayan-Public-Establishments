@@ -809,6 +809,12 @@ export default function TourismHome() {
     })()
   }
 
+  useEffect(() => {
+    if (mobileDiscoveryPanel === 'recommendations') {
+      prefetchRecommendationExplanations()
+    }
+  }, [mobileDiscoveryPanel, recommendations])
+
   const openDetails = (establishment: Establishment & Partial<RecommendationContext>) => {
     const recommendationContext = typeof establishment.reason === 'string'
       ? {
@@ -1018,7 +1024,7 @@ export default function TourismHome() {
                 </Button>
                 <Button
                   type="button"
-                  onClick={() => { setMobileDiscoveryPanel('recommendations'); prefetchRecommendationExplanations() }}
+                  onClick={() => setMobileDiscoveryPanel('recommendations')}
                   aria-expanded={mobileDiscoveryPanel === 'recommendations'}
                   aria-label="Show personalized picks"
                   className="h-11 justify-center rounded-2xl bg-[#E5E8E1] px-3 text-sm font-semibold text-[#193364] shadow-[inset_3px_3px_7px_rgba(163,177,198,0.35),inset_-3px_-3px_7px_rgba(255,255,255,0.65)] hover:bg-[#F5F8FF] active:translate-y-[1px]"
