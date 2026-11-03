@@ -88,6 +88,12 @@ interface RatingReview {
   photo_path?: string | null
 }
 
+type RecommendationContext = {
+  reason: string
+  distance: number | null
+  score: number
+}
+
 interface UserLocation {
   latitude: number
   longitude: number
@@ -395,6 +401,10 @@ export default function TourismHome() {
   const [reportReason, setReportReason] = useState<typeof reviewReportOptions[number]['value'] | ''>('')
   const [reportDetails, setReportDetails] = useState('')
   const [submittingReport, setSubmittingReport] = useState(false)
+  const [selectedRecommendationContext, setSelectedRecommendationContext] = useState<RecommendationContext | null>(null)
+  const [recommendationExplanation, setRecommendationExplanation] = useState('')
+  const [recommendationExplanationLoading, setRecommendationExplanationLoading] = useState(false)
+  const [recommendationExplanationError, setRecommendationExplanationError] = useState('')
 
   useEffect(() => {
     const modalOpen = Boolean(mobileDiscoveryPanel || selectedEstablishment || reportingReview)
@@ -719,7 +729,62 @@ export default function TourismHome() {
     saveBehavior(next)
   }
 
-  const openDetails = (establishment: Establishment) => {
+  const explainRecommendation = async (establishment: Establishment, context: RecommendationContext) => {
+    const cacheKey = `public:recommendation-explanation:${establishment.id}:${context.score.toFixed(2)}:${context.distance ?? 'none'}`
+    const cached = getPublicCache<string>(cacheKey)
+    if (cached) {
+      setRecommendationExplanation(cached)
+      return
+    }
+
+    setRecommendationExplanationLoading(true)
+    setRecommendationExplanationError('')
+    try {
+      const response = await fetch('/api/recommendation-explanation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          establishment: {
+            name: establishment.name,
+            category: getPublicCategory(establishment.type, establishment.dot_classification),
+            address: establishment.address,
+            description: establishment.description,
+            amenities: establishment.amenities,
+            openingHours: establishment.opening_hours,
+            totalRooms: establishment.total_rooms,
+            featured: establishment.featured,
+            averageRating: ratingSummaries[establishment.id]?.average,
+            reviewCount: ratingSummaries[establishment.id]?.count,
+          },
+          recommendation: {
+            reason: context.reason,
+            distanceKm: context.distance,
+          },
+        }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok || typeof result.explanation !== 'string') throw new Error(result.error || 'Unable to explain this recommendation')
+      setPublicCache(cacheKey, result.explanation, 10 * 60_000)
+      setRecommendationExplanation(result.explanation)
+    } catch (error) {
+      setRecommendationExplanationError(error instanceof Error ? error.message : 'Unable to explain this recommendation')
+    } finally {
+      setRecommendationExplanationLoading(false)
+    }
+  }
+
+  const openDetails = (establishment: Establishment & Partial<RecommendationContext>) => {
+    const recommendationContext = typeof establishment.reason === 'string'
+      ? {
+          reason: establishment.reason,
+          distance: typeof establishment.distance === 'number' ? establishment.distance : null,
+          score: typeof establishment.score === 'number' ? establishment.score : 0,
+        }
+      : null
+    setSelectedRecommendationContext(recommendationContext)
+    setRecommendationExplanation('')
+    setRecommendationExplanationError('')
+    if (recommendationContext) void explainRecommendation(establishment, recommendationContext)
     setSelectedEstablishment(establishment)
     setSelectedPhotoIndex(0)
     setShowSelectedMap(false)
@@ -1304,6 +1369,28 @@ export default function TourismHome() {
                   <RatingDisplay summary={selectedRating} />
                 </div>
               </div>
+
+              {selectedRecommendationContext && (
+                <div className="mb-5 rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-5 shadow-[inset_3px_3px_7px_rgba(163,177,198,0.25),inset_-3px_-3px_7px_rgba(255,255,255,0.62)]">
+                  <div className="flex items-start gap-3">
+                    <div className="public-neumorphic-inset flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[#193364]">
+                      <Sparkles className="h-5 w-5" strokeWidth={1.8} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-[#193364]">Why this place was recommended</h3>
+                      {recommendationExplanationLoading ? (
+                        <p className="mt-2 text-sm leading-6 text-slate-600">Creating a short explanation from the listing details...</p>
+                      ) : recommendationExplanation ? (
+                        <p className="mt-2 text-sm leading-6 text-slate-700">{recommendationExplanation}</p>
+                      ) : (
+                        <p className="mt-2 text-sm leading-6 text-slate-700">{selectedRecommendationContext.reason}</p>
+                      )}
+                      {recommendationExplanationError && <p className="mt-2 text-xs text-slate-500">{recommendationExplanationError} The recommendation signal is still shown above.</p>}
+                      <p className="mt-3 text-[11px] leading-4 text-slate-500">AI-generated explanation based only on this public listing and current recommendation signals.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {selectedEstablishment.description && (
                 <div className="mb-5 rounded-2xl bg-[#F5F8FF] p-5">
