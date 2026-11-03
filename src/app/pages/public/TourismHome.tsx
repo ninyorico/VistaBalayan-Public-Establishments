@@ -190,18 +190,30 @@ const PUBLIC_LISTING_REAL_PINS: Record<string, UserLocation> = {
   'Villa Scarlet Garden Resort': { latitude: 13.94959, longitude: 120.6992248 },
 }
 
+const isValidCoordinates = (latitude: unknown, longitude: unknown) => {
+  const numericLatitude = Number(latitude)
+  const numericLongitude = Number(longitude)
+  return Number.isFinite(numericLatitude)
+    && Number.isFinite(numericLongitude)
+    && numericLatitude >= -90
+    && numericLatitude <= 90
+    && numericLongitude >= -180
+    && numericLongitude <= 180
+    && !(numericLatitude === 0 && numericLongitude === 0)
+}
+
 const readLocationPinFromAmenities = (amenities = '') => {
   const match = amenities.match(/\[LOCATION_PIN:(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)\]/)
   if (!match) return null
   const latitude = Number(match[1])
   const longitude = Number(match[2])
-  return Number.isFinite(latitude) && Number.isFinite(longitude) ? { latitude, longitude } : null
+  return isValidCoordinates(latitude, longitude) ? { latitude, longitude } : null
 }
 
 const getStoredLocation = (establishment: Establishment) => {
   const latitude = Number(establishment.latitude)
   const longitude = Number(establishment.longitude)
-  if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+  if (isValidCoordinates(latitude, longitude)) {
     return { latitude, longitude }
   }
   const amenitiesPin = readLocationPinFromAmenities(establishment.amenities || '')
