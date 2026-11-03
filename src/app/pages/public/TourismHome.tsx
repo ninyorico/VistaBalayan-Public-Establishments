@@ -732,7 +732,7 @@ export default function TourismHome() {
 
   const getSavedRecommendationExplanation = (establishmentId: string) => {
     const cacheKey = `public:recommendation-explanation:${establishmentId}`
-    const persistentCacheKey = `vistabalayan_public_ai_explanation_v1:${establishmentId}`
+    const persistentCacheKey = `vistabalayan_public_ai_explanation_v2:${establishmentId}`
     const cached = getPublicCache<string>(cacheKey)
     if (cached) return cached
     try {
@@ -777,7 +777,7 @@ export default function TourismHome() {
       const result = await response.json().catch(() => ({}))
       if (!response.ok || typeof result.explanation !== 'string') throw new Error(result.error || 'Unable to explain this recommendation')
       const cacheKey = `public:recommendation-explanation:${establishment.id}`
-      const persistentCacheKey = `vistabalayan_public_ai_explanation_v1:${establishment.id}`
+      const persistentCacheKey = `vistabalayan_public_ai_explanation_v2:${establishment.id}`
       setPublicCache(cacheKey, result.explanation, 30 * 24 * 60 * 60_000)
       try {
         window.localStorage.setItem(persistentCacheKey, result.explanation)
@@ -787,7 +787,9 @@ export default function TourismHome() {
       return result.explanation as string
     })()
       .catch((error) => {
-        console.warn('Recommendation explanation unavailable:', error instanceof Error ? error.message : 'unknown error')
+        const message = error instanceof Error ? error.message : 'Unable to create an explanation right now.'
+        console.warn('Recommendation explanation unavailable:', message)
+        setRecommendationExplanationError(message)
         return null
       })
       .finally(() => recommendationExplanationRequests.current.delete(establishment.id))
@@ -918,10 +920,10 @@ export default function TourismHome() {
   }, [establishments, behavior, userLocation, routeDistances])
 
   useEffect(() => {
-    if (mobileDiscoveryPanel === 'recommendations') {
+    if (recommendations.length > 0) {
       prefetchRecommendationExplanations()
     }
-  }, [mobileDiscoveryPanel, recommendations])
+  }, [recommendations])
 
   const nearestStays = useMemo(() => {
     if (!userLocation) {
