@@ -1493,10 +1493,6 @@ export default function TourismHome() {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-semibold text-[#193364]">Why this place was recommended</h3>
-                        <Badge className="rounded-full bg-[#193364] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white shadow-none hover:bg-[#193364]">
-                          <Sparkles className="mr-1 h-3 w-3" strokeWidth={1.8} />
-                          AI-assisted
-                        </Badge>
                       </div>
                       {recommendationExplanationLoading ? (
                         <p className="mt-2 text-sm leading-6 text-slate-600">Creating a short explanation from the listing details...</p>
