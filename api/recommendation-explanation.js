@@ -1,11 +1,9 @@
 import { GoogleGenAI } from '@google/genai';
 
 const MODEL_NAMES = Array.from(new Set([
-  process.env.GEMINI_MODEL || 'gemini-3.8-flash',
-  'gemini-4-argon',
-  'gemini-3.8-flash',
-  'gemini-3.6-flash',
+  process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
   'gemini-3.5-flash-lite',
+  'gemini-3.6-flash',
 ]));
 
 const requestWindows = new Map();
@@ -52,7 +50,16 @@ const parseBody = (req) => {
   }
 };
 
-const isRetryable = (error) => /(?:404|429|500|502|503|unavailable|high demand|not found)/i.test(String(error?.message || error));
+const isRetryable = (error) => /(?:404|408|429|500|502|503|504|timeout|timed out|unavailable|high demand|not found)/i.test(String(error?.message || error));
+
+const withTimeout = (promise, timeoutMs) => Promise.race([
+  promise,
+  new Promise((_, reject) => {
+    const error = new Error(`Gemini request timed out after ${timeoutMs}ms`);
+    error.statusCode = 504;
+    setTimeout(() => reject(error), timeoutMs);
+  }),
+]);
 
 const generateWithFallback = async (apiKey, prompt) => {
   let lastError = null;
@@ -60,7 +67,7 @@ const generateWithFallback = async (apiKey, prompt) => {
   for (const modelName of MODEL_NAMES) {
     try {
       const ai = new GoogleGenAI({ apiKey });
-      const result = await ai.models.generateContent({ model: modelName, contents: prompt });
+      const result = await withTimeout(ai.models.generateContent({ model: modelName, contents: prompt }), 8000);
       return { text: result.text || '', modelName };
     } catch (error) {
       lastError = error;
