@@ -859,17 +859,20 @@ export default function TourismHome() {
         }
       : null
     setSelectedRecommendationContext(recommendationContext)
-    setRecommendationExplanation(recommendationContext ? getSavedRecommendationExplanation(establishment.id) || '' : '')
     setRecommendationExplanationError('')
-    setRecommendationExplanationLoading(Boolean(recommendationContext && recommendationExplanationRequests.current.has(establishment.id)))
     if (recommendationContext) {
+      const cachedExplanation = getSavedRecommendationExplanation(establishment.id)
       const pending = recommendationExplanationRequests.current.get(establishment.id)
-      if (pending) {
-        void pending.then((explanation) => {
-          setRecommendationExplanation(explanation || '')
-          setRecommendationExplanationLoading(false)
-        })
-      }
+      const explanationRequest = pending || requestRecommendationExplanation(establishment, recommendationContext)
+      setRecommendationExplanation(cachedExplanation || '')
+      setRecommendationExplanationLoading(!cachedExplanation)
+      void explanationRequest.then((explanation) => {
+        setRecommendationExplanation(explanation || '')
+        setRecommendationExplanationLoading(false)
+      })
+    } else {
+      setRecommendationExplanation('')
+      setRecommendationExplanationLoading(false)
     }
     setSelectedEstablishment(establishment)
     setSelectedPhotoIndex(0)
