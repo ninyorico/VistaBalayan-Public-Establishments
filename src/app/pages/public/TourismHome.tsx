@@ -160,6 +160,11 @@ const getPublicCategory = (type = '', dotClassification: string | null = '') => 
   return null
 }
 
+const getSafeRecommendationReason = (reason: string) => {
+  if (/places you viewed|similar to .*viewed/i.test(reason)) return 'AI explanation is temporarily unavailable for this recommendation.'
+  return reason
+}
+
 const getCategoryIcon = (type: string, dotClassification: string | null = '') => {
   return getPublicCategory(type, dotClassification) === 'Hotel' ? Building2 : Hotel
 }
@@ -1157,7 +1162,7 @@ export default function TourismHome() {
                           <p className="truncate font-semibold text-[#193364]">{est.name}</p>
                           <RecommendationExplanationPreview
                             explanation={recommendationExplanations[est.id]}
-                            fallback={est.reason}
+                            fallback={getSafeRecommendationReason(est.reason)}
                             loading={recommendationExplanationRequests.current.has(est.id)}
                           />
                         </button>
@@ -1408,7 +1413,7 @@ export default function TourismHome() {
                         <p className="truncate font-semibold text-[#193364]">{est.name}</p>
                         <RecommendationExplanationPreview
                           explanation={recommendationExplanations[est.id]}
-                          fallback={est.reason}
+                          fallback={getSafeRecommendationReason(est.reason)}
                           loading={recommendationExplanationRequests.current.has(est.id)}
                         />
                       </div>
@@ -1550,7 +1555,7 @@ export default function TourismHome() {
                       ) : recommendationExplanation ? (
                         <p className="text-justify text-sm leading-6 text-slate-700 [text-wrap:pretty] hyphens-auto" data-ai-text-spacing="justified-even-indent">{recommendationExplanation}</p>
                       ) : (
-                        <p className="text-justify text-sm leading-6 text-slate-700 [text-wrap:pretty] hyphens-auto" data-ai-text-spacing="justified-even-indent">{selectedRecommendationContext.reason}</p>
+                        <p className="text-justify text-sm leading-6 text-slate-700 [text-wrap:pretty] hyphens-auto" data-ai-text-spacing="justified-even-indent">{getSafeRecommendationReason(selectedRecommendationContext.reason)}</p>
                       )}
                       {recommendationExplanationError && <p className="mt-2 text-xs leading-5 text-slate-500">{recommendationExplanationError} The recommendation signal is still shown above.</p>}
                     </div>
