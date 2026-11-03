@@ -55,6 +55,7 @@ const isRetryable = (error) => /(?:404|429|500|502|503|unavailable|high demand|n
 
 const generateWithFallback = async (apiKey, prompt) => {
   let lastError = null;
+  let lastProviderStatus = 'unknown';
   for (const modelName of MODEL_NAMES) {
     try {
       const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: modelName });
@@ -63,12 +64,14 @@ const generateWithFallback = async (apiKey, prompt) => {
     } catch (error) {
       lastError = error;
       const providerStatus = error?.status || error?.statusCode || error?.response?.status || 'unknown';
+      lastProviderStatus = providerStatus;
       console.error('Public recommendation explanation model attempt failed', { model: modelName, providerStatus, retryable: isRetryable(error) });
       if (!isRetryable(error)) throw error;
     }
   }
   const error = new Error('AI models are temporarily unavailable');
   error.statusCode = 503;
+  error.providerStatus = lastProviderStatus;
   error.cause = lastError;
   throw error;
 };
@@ -116,7 +119,12 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Public recommendation explanation failed:', error instanceof Error ? error.message : 'unknown error');
     if (error?.statusCode === 503) {
-      return sendJson(res, 200, { explanation: getFallbackExplanation(facts), fallback: true, reason: 'provider_unavailable' });
+      return sendJson(res, 200, {
+        explanation: getFallbackExplanation(facts),
+        fallback: true,
+        reason: 'provider_unavailable',
+        providerStatus: error?.providerStatus || 'unknown',
+      });
     }
     return sendJson(res, error?.statusCode || 500, {
       error: error?.statusCode === 503
