@@ -730,10 +730,19 @@ export default function TourismHome() {
   }
 
   const explainRecommendation = async (establishment: Establishment, context: RecommendationContext) => {
-    const cacheKey = `public:recommendation-explanation:${establishment.id}:${context.score.toFixed(2)}:${context.distance ?? 'none'}`
+    const cacheKey = `public:recommendation-explanation:${establishment.id}`
+    const persistentCacheKey = `vistabalayan_public_ai_explanation_v1:${establishment.id}`
     const cached = getPublicCache<string>(cacheKey)
-    if (cached) {
-      setRecommendationExplanation(cached)
+    const saved = cached || (() => {
+      try {
+        return window.localStorage.getItem(persistentCacheKey)
+      } catch {
+        return null
+      }
+    })()
+    if (saved) {
+      setPublicCache(cacheKey, saved, 30 * 24 * 60 * 60_000)
+      setRecommendationExplanation(saved)
       return
     }
 
@@ -764,7 +773,12 @@ export default function TourismHome() {
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok || typeof result.explanation !== 'string') throw new Error(result.error || 'Unable to explain this recommendation')
-      setPublicCache(cacheKey, result.explanation, 10 * 60_000)
+      setPublicCache(cacheKey, result.explanation, 30 * 24 * 60 * 60_000)
+      try {
+        window.localStorage.setItem(persistentCacheKey, result.explanation)
+      } catch {
+        // The in-memory cache still prevents duplicate requests during this visit.
+      }
       setRecommendationExplanation(result.explanation)
     } catch (error) {
       setRecommendationExplanationError(error instanceof Error ? error.message : 'Unable to explain this recommendation')
@@ -991,6 +1005,10 @@ export default function TourismHome() {
                 <div>
                   <p className="text-sm font-medium text-[#323232]">Personalized picks</p>
                   <h2 className="mt-1 text-2xl font-semibold tracking-[-0.025em]">Where to stay next</h2>
+                  <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                    <Sparkles className="h-3.5 w-3.5 text-[#193364]" strokeWidth={1.8} />
+                    AI-assisted explanations are available for these picks.
+                  </p>
                 </div>
                 <Button
                   type="button"
@@ -1231,7 +1249,7 @@ export default function TourismHome() {
 
             {mobileDiscoveryPanel === 'recommendations' ? (
               <div className="space-y-3">
-                <p className="text-sm leading-5 text-slate-600">Personalized suggestions based on your browsing pattern and travel interests.</p>
+                <p className="text-sm leading-5 text-slate-600">Personalized suggestions based on your browsing pattern and travel interests. Explanations are AI-assisted and based on the public listing details shown here.</p>
                 {recommendations.map((est) => (
                   <button
                     key={est.id}
@@ -1377,7 +1395,13 @@ export default function TourismHome() {
                       <Sparkles className="h-5 w-5" strokeWidth={1.8} />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-[#193364]">Why this place was recommended</h3>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold text-[#193364]">Why this place was recommended</h3>
+                        <Badge className="rounded-full bg-[#193364] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white shadow-none hover:bg-[#193364]">
+                          <Sparkles className="mr-1 h-3 w-3" strokeWidth={1.8} />
+                          AI-assisted
+                        </Badge>
+                      </div>
                       {recommendationExplanationLoading ? (
                         <p className="mt-2 text-sm leading-6 text-slate-600">Creating a short explanation from the listing details...</p>
                       ) : recommendationExplanation ? (
@@ -1386,7 +1410,7 @@ export default function TourismHome() {
                         <p className="mt-2 text-sm leading-6 text-slate-700">{selectedRecommendationContext.reason}</p>
                       )}
                       {recommendationExplanationError && <p className="mt-2 text-xs text-slate-500">{recommendationExplanationError} The recommendation signal is still shown above.</p>}
-                      <p className="mt-3 text-[11px] leading-4 text-slate-500">AI-generated explanation based only on this public listing and current recommendation signals.</p>
+                      <p className="mt-3 text-[11px] leading-4 text-slate-500">AI-assisted explanation based only on this public listing and current recommendation signals. It may be incomplete or inaccurate, so please verify important details with the establishment.</p>
                     </div>
                   </div>
                 </div>
