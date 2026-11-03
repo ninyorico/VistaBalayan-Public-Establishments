@@ -1381,7 +1381,7 @@ export default function TourismHome() {
                     key={est.id}
                     type="button"
                     onClick={() => { setMobileDiscoveryPanel(null); openDetails(est) }}
-                    className="w-full rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-4 text-left transition hover:bg-[#F5F8FF] active:translate-y-[1px]"
+                    className="w-full rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-4 text-left transition hover:border-[#193364]/35 hover:bg-[#E5E8E1] active:translate-y-[1px]"
                   >
                     <div className="flex items-start gap-3">
                       <div className="public-neumorphic-inset mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[#193364]">
@@ -1741,12 +1741,11 @@ function RecommendationExplanationPreview({ explanation, fallback, loading }: { 
   const text = loading ? 'Preparing a concise explanation...' : explanation || fallback
 
   return (
-    <div className="mt-2">
-      <div className="relative max-h-11 overflow-hidden pr-1 text-sm leading-5 text-[#323232]">
+    <div className="mt-2 text-left">
+      <div className="line-clamp-2 pr-1 text-sm leading-5 text-[#323232]">
         <p>{text}</p>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-[#E5E8E1] to-transparent" />
       </div>
-      <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#193364]">
+      <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#193364]">
         Show more <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
       </span>
     </div>
