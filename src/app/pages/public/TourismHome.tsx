@@ -1549,7 +1549,7 @@ export default function TourismHome() {
                     </div>
                     <div className="min-w-0 flex-1">
                       {recommendationExplanationLoading ? (
-                        <p className="text-justify text-sm leading-6 text-slate-600 [text-wrap:pretty] hyphens-auto" data-ai-text-spacing="justified-even-indent">Creating a short explanation from the listing details...</p>
+                        <p className="text-justify text-sm leading-6 text-slate-600 [text-wrap:pretty] hyphens-auto" data-ai-text-spacing="justified-even-indent">Loading recommendation details…</p>
                       ) : recommendationExplanation ? (
                         <p className="text-justify text-sm leading-6 text-slate-700 [text-wrap:pretty] hyphens-auto" data-ai-text-spacing="justified-even-indent">{recommendationExplanation}</p>
                       ) : (
