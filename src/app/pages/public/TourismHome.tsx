@@ -1758,7 +1758,7 @@ export default function TourismHome() {
 }
 
 function RecommendationExplanationPreview({ explanation, fallback, loading }: { explanation?: string; fallback: string; loading: boolean }) {
-  const text = loading ? 'Preparing a concise explanation...' : explanation || fallback
+  const text = loading ? 'Loading recommendation details…' : explanation || fallback
 
   return (
     <div className="mt-2 text-left">
