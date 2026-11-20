@@ -776,9 +776,14 @@ export default function TourismHome() {
     saveBehavior(next)
   }
 
-  const getSavedRecommendationExplanation = (establishmentId: string) => {
-    const cacheKey = `public:recommendation-explanation-v11:${establishmentId}`
-    const persistentCacheKey = `vistabalayan_public_ai_explanation_v11:${establishmentId}`
+  const getDistanceCacheKey = (distance: number | null) => (
+    typeof distance === 'number' && Number.isFinite(distance) && distance > 0 ? distance.toFixed(1) : 'unavailable'
+  )
+
+  const getSavedRecommendationExplanation = (establishmentId: string, distance: number | null) => {
+    const distanceKey = getDistanceCacheKey(distance)
+    const cacheKey = `public:recommendation-explanation-v12:${establishmentId}:${distanceKey}`
+    const persistentCacheKey = `vistabalayan_public_ai_explanation_v12:${establishmentId}:${distanceKey}`
     const cached = getPublicCache<string>(cacheKey)
     if (cached) return cached
     try {
@@ -796,10 +801,15 @@ export default function TourismHome() {
   }
 
   const requestRecommendationExplanation = (establishment: Establishment, context: RecommendationContext) => {
-    const cached = getSavedRecommendationExplanation(establishment.id)
+    const safeDistance = typeof context.distance === 'number' && Number.isFinite(context.distance) && context.distance > 0
+      ? context.distance
+      : null
+    const distanceKey = getDistanceCacheKey(safeDistance)
+    const requestKey = `${establishment.id}:${distanceKey}`
+    const cached = getSavedRecommendationExplanation(establishment.id, safeDistance)
     if (cached) return Promise.resolve(saveRecommendationExplanation(establishment.id, cached))
 
-    const pending = recommendationExplanationRequests.current.get(establishment.id)
+    const pending = recommendationExplanationRequests.current.get(requestKey)
     if (pending) return pending
 
     const request = (async () => {
@@ -817,14 +827,14 @@ export default function TourismHome() {
           recommendation: {
             reason: context.reason,
             signals: context.signals || [],
-            distanceKm: context.distance,
+            distanceKm: safeDistance,
           },
         }),
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok || typeof result.explanation !== 'string') throw new Error(result.error || 'Unable to explain this recommendation')
-      const cacheKey = `public:recommendation-explanation-v11:${establishment.id}`
-      const persistentCacheKey = `vistabalayan_public_ai_explanation_v11:${establishment.id}`
+      const cacheKey = `public:recommendation-explanation-v12:${establishment.id}:${distanceKey}`
+      const persistentCacheKey = `vistabalayan_public_ai_explanation_v12:${establishment.id}:${distanceKey}`
       setRecommendationExplanations((current) => ({ ...current, [establishment.id]: result.explanation }))
       if (!result.fallback) {
         setPublicCache(cacheKey, result.explanation, 30 * 24 * 60 * 60_000)
@@ -842,9 +852,9 @@ export default function TourismHome() {
         setRecommendationExplanationError(message)
         return null
       })
-      .finally(() => recommendationExplanationRequests.current.delete(establishment.id))
+      .finally(() => recommendationExplanationRequests.current.delete(requestKey))
 
-    recommendationExplanationRequests.current.set(establishment.id, request)
+    recommendationExplanationRequests.current.set(requestKey, request)
     return request
   }
 
@@ -967,7 +977,8 @@ export default function TourismHome() {
       .filter((est) => !viewedIds.has(est.id))
       .map((est) => {
         const publicCategory = getPublicCategory(est.type, est.dot_classification) || 'Resort'
-        const distance = userLocation ? routeDistances[est.id] ?? null : null
+        const rawDistance = userLocation ? routeDistances[est.id] ?? null : null
+        const distance = typeof rawDistance === 'number' && Number.isFinite(rawDistance) && rawDistance > 0 ? rawDistance : null
         const categoryBoost = behavior.categoryClicks[publicCategory] || 0
         const viewedCategoryMatch = viewedCategories.has(publicCategory)
         const searchMatches = Object.entries(behavior.searchCounts)
@@ -1033,7 +1044,7 @@ export default function TourismHome() {
     return establishments
       .map((est) => {
         const distance = routeDistances[est.id]
-        return typeof distance === 'number' && Number.isFinite(distance) ? { ...est, distance } : null
+        return typeof distance === 'number' && Number.isFinite(distance) && distance > 0 ? { ...est, distance } : null
       })
       .filter((est): est is Establishment & { distance: number } => Boolean(est))
       .sort((a, b) => a.distance - b.distance)
