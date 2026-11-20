@@ -769,8 +769,8 @@ export default function TourismHome() {
   }
 
   const getSavedRecommendationExplanation = (establishmentId: string) => {
-    const cacheKey = `public:recommendation-explanation-v9:${establishmentId}`
-    const persistentCacheKey = `vistabalayan_public_ai_explanation_v9:${establishmentId}`
+    const cacheKey = `public:recommendation-explanation-v10:${establishmentId}`
+    const persistentCacheKey = `vistabalayan_public_ai_explanation_v10:${establishmentId}`
     const cached = getPublicCache<string>(cacheKey)
     if (cached) return cached
     try {
@@ -815,8 +815,8 @@ export default function TourismHome() {
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok || typeof result.explanation !== 'string') throw new Error(result.error || 'Unable to explain this recommendation')
-      const cacheKey = `public:recommendation-explanation-v9:${establishment.id}`
-      const persistentCacheKey = `vistabalayan_public_ai_explanation_v9:${establishment.id}`
+      const cacheKey = `public:recommendation-explanation-v10:${establishment.id}`
+      const persistentCacheKey = `vistabalayan_public_ai_explanation_v10:${establishment.id}`
       setRecommendationExplanations((current) => ({ ...current, [establishment.id]: result.explanation }))
       if (!result.fallback) {
         setPublicCache(cacheKey, result.explanation, 30 * 24 * 60 * 60_000)
@@ -970,7 +970,7 @@ export default function TourismHome() {
         const distanceScore = distance === null ? 0 : Math.max(0, 100 - distance * 18)
         const score = distanceScore + categoryBoost * 7 + (viewedCategoryMatch ? 4 : 0) + searchBoost + featuredBoost
         const signals = [
-          ...(distance !== null ? [{ key: 'distance', text: `Nearby: ${distance.toFixed(1)} km route from your location.`, weight: distanceScore }] : []),
+          ...(distance !== null ? [{ key: 'distance', text: `About ${distance.toFixed(1)} km by road from your location.`, weight: distanceScore }] : []),
           ...(searchMatches.length > 0 ? [{ key: 'search', text: `Matches your search for "${searchMatches[0][0]}".`, weight: searchBoost }] : []),
           ...(categoryBoost > 0 ? [{ key: 'category', text: `Fits your interest in ${publicCategory.toLowerCase()} stays.`, weight: categoryBoost * 7 }] : []),
           ...(viewedCategoryMatch ? [{ key: 'viewed-category', text: `Similar to the ${publicCategory.toLowerCase()} places you viewed.`, weight: 4 }] : []),
