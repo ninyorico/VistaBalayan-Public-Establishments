@@ -884,8 +884,9 @@ export default function TourismHome() {
     setSelectedRecommendationContext(recommendationContext)
     setRecommendationExplanationError('')
     if (recommendationContext) {
-      const cachedExplanation = getSavedRecommendationExplanation(establishment.id)
-      const pending = recommendationExplanationRequests.current.get(establishment.id)
+      const distanceKey = getDistanceCacheKey(recommendationContext.distance)
+      const cachedExplanation = getSavedRecommendationExplanation(establishment.id, recommendationContext.distance)
+      const pending = recommendationExplanationRequests.current.get(`${establishment.id}:${distanceKey}`)
       const explanationRequest = pending || requestRecommendationExplanation(establishment, recommendationContext)
       setRecommendationExplanation(cachedExplanation || '')
       setRecommendationExplanationLoading(!cachedExplanation)
