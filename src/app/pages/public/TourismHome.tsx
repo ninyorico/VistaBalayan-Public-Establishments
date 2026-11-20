@@ -207,6 +207,11 @@ const isValidCoordinates = (latitude: unknown, longitude: unknown) => {
     && !(numericLatitude === 0 && numericLongitude === 0)
 }
 
+const isSameCoordinate = (left: UserLocation, right: UserLocation) => (
+  Math.abs(left.latitude - right.latitude) < 0.000001
+  && Math.abs(left.longitude - right.longitude) < 0.000001
+)
+
 const readLocationPinFromAmenities = (amenities = '') => {
   const match = amenities.match(/\[LOCATION_PIN:(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)\]/)
   if (!match) return null
@@ -508,7 +513,10 @@ export default function TourismHome() {
         if (!response.ok) return null
         const result = await response.json() as { routes?: Array<{ distance?: number }> }
         const meters = result.routes?.[0]?.distance
-        return typeof meters === 'number' && Number.isFinite(meters) ? [establishment.id, meters / 1000] as [string, number] : null
+        const isUsableDistance = typeof meters === 'number'
+          && Number.isFinite(meters)
+          && (meters > 0 || isSameCoordinate(userLocation, coords))
+        return isUsableDistance ? [establishment.id, meters / 1000] as [string, number] : null
       })
     )
       .then((results) => {
