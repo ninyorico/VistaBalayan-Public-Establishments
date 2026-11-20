@@ -1119,7 +1119,7 @@ export default function TourismHome() {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search resort, hotel, address, pool, beach, or amenity"
+                  placeholder="Search resort, hotel, or address"
                   className="h-14 rounded-[1.25rem] border border-[#AFB3B5] bg-[#E0E5EC] pl-12 pr-4 text-base text-[#193364] shadow-[inset_3px_3px_6px_rgba(163,177,198,0.30),inset_-3px_-3px_6px_rgba(255,255,255,0.55)] placeholder:text-[#6C7895] focus-visible:border-[#193364]/45 focus-visible:ring-2 focus-visible:ring-[#193364]/20"
                 />
               </div>
