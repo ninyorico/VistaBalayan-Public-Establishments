@@ -443,7 +443,6 @@ export default function TourismHome() {
   const [recommendationExplanation, setRecommendationExplanation] = useState('')
   const [recommendationExplanationLoading, setRecommendationExplanationLoading] = useState(false)
   const [recommendationExplanationError, setRecommendationExplanationError] = useState('')
-  const [directionsError, setDirectionsError] = useState('')
   const recommendationExplanationRequests = useRef(new Map<string, Promise<string | null>>())
 
   useEffect(() => {
@@ -903,7 +902,6 @@ export default function TourismHome() {
     setSelectedPhotoIndex(0)
     setShowSelectedMap(false)
     setRatingMessage('')
-    setDirectionsError('')
     setSelectedReviewRating(ratingSummaries[establishment.id]?.visitorRating || 0)
     setReviewerName(readReviewerName())
     setReviewComment('')
@@ -1060,31 +1058,34 @@ export default function TourismHome() {
   const selectedPhoto = selectedPhotos[selectedPhotoIndex] || selectedPhotos[0]
 
   const openDirectionsToEstablishment = (establishment: Establishment) => {
-    setDirectionsError('')
-    setLocationStatus('loading')
+    if (userLocation) {
+      window.open(getGoogleMapsDirectionsUrl(establishment, userLocation), '_blank')
+      return
+    }
 
-    const directionsWindow = window.open('', '_blank')
-    if (directionsWindow) {
-      directionsWindow.document.title = 'Loading directions…'
-      directionsWindow.document.body.innerHTML = '<p style="font-family: system-ui, sans-serif; padding: 2rem;">Getting your location to prepare directions…</p>'
-      directionsWindow.opener = null
+    // Open the exact saved pin immediately. If location permission succeeds,
+    // replace the route with the visitor's actual starting point afterward.
+    const directionsWindow = window.open(getGoogleMapsDirectionsUrl(establishment, null), '_blank')
+
+    const navigateToDirections = (origin?: UserLocation | null) => {
+      const directionsUrl = getGoogleMapsDirectionsUrl(establishment, origin)
+
+      if (directionsWindow) {
+        directionsWindow.location.href = directionsUrl
+      } else {
+        window.location.href = directionsUrl
+      }
     }
 
     getMobileFriendlyLocation(
       (location) => {
         setUserLocation(location)
         setLocationStatus('ready')
-        const directionsUrl = getGoogleMapsDirectionsUrl(establishment, location)
-        if (directionsWindow && !directionsWindow.closed) {
-          directionsWindow.location.href = directionsUrl
-          return
-        }
-        setDirectionsError('Directions could not open in a new tab. Allow pop-ups for this website, then click Get directions again. Your VistaBalayan page is still open.')
+        navigateToDirections(location)
       },
       () => {
         setLocationStatus('blocked')
-        if (directionsWindow && !directionsWindow.closed) directionsWindow.close()
-        setDirectionsError('Turn on Location Services and allow location access for this website before opening directions. Your location is required for an accurate route.')
+        navigateToDirections(null)
       }
     )
   }
@@ -1631,11 +1632,6 @@ export default function TourismHome() {
                     </Button>
                   </div>
                 </div>
-                {directionsError && (
-                  <p role="alert" className="px-3 pb-3 text-sm leading-5 text-red-700">
-                    {directionsError}
-                  </p>
-                )}
                 {showSelectedMap && (
                   <iframe
                     title={`${selectedEstablishment.name} OpenStreetMap location`}
