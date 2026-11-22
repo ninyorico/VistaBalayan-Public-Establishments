@@ -443,6 +443,7 @@ export default function TourismHome() {
   const [recommendationExplanation, setRecommendationExplanation] = useState('')
   const [recommendationExplanationLoading, setRecommendationExplanationLoading] = useState(false)
   const [recommendationExplanationError, setRecommendationExplanationError] = useState('')
+  const [directionsError, setDirectionsError] = useState('')
   const recommendationExplanationRequests = useRef(new Map<string, Promise<string | null>>())
 
   useEffect(() => {
@@ -902,6 +903,7 @@ export default function TourismHome() {
     setSelectedPhotoIndex(0)
     setShowSelectedMap(false)
     setRatingMessage('')
+    setDirectionsError('')
     setSelectedReviewRating(ratingSummaries[establishment.id]?.visitorRating || 0)
     setReviewerName(readReviewerName())
     setReviewComment('')
@@ -1058,34 +1060,19 @@ export default function TourismHome() {
   const selectedPhoto = selectedPhotos[selectedPhotoIndex] || selectedPhotos[0]
 
   const openDirectionsToEstablishment = (establishment: Establishment) => {
-    if (userLocation) {
-      window.open(getGoogleMapsDirectionsUrl(establishment, userLocation), '_blank')
-      return
-    }
-
-    // Open the exact saved pin immediately. If location permission succeeds,
-    // replace the route with the visitor's actual starting point afterward.
-    const directionsWindow = window.open(getGoogleMapsDirectionsUrl(establishment, null), '_blank')
-
-    const navigateToDirections = (origin?: UserLocation | null) => {
-      const directionsUrl = getGoogleMapsDirectionsUrl(establishment, origin)
-
-      if (directionsWindow) {
-        directionsWindow.location.href = directionsUrl
-      } else {
-        window.location.href = directionsUrl
-      }
-    }
+    setDirectionsError('')
+    setLocationStatus('loading')
 
     getMobileFriendlyLocation(
       (location) => {
         setUserLocation(location)
         setLocationStatus('ready')
-        navigateToDirections(location)
+        const directionsWindow = window.open(getGoogleMapsDirectionsUrl(establishment, location), '_blank')
+        if (!directionsWindow) window.location.href = getGoogleMapsDirectionsUrl(establishment, location)
       },
       () => {
         setLocationStatus('blocked')
-        navigateToDirections(null)
+        setDirectionsError('Turn on Location Services and allow location access for this website before opening directions. Your location is required for an accurate route.')
       }
     )
   }
@@ -1632,6 +1619,11 @@ export default function TourismHome() {
                     </Button>
                   </div>
                 </div>
+                {directionsError && (
+                  <p role="alert" className="px-3 pb-3 text-sm leading-5 text-red-700">
+                    {directionsError}
+                  </p>
+                )}
                 {showSelectedMap && (
                   <iframe
                     title={`${selectedEstablishment.name} OpenStreetMap location`}
