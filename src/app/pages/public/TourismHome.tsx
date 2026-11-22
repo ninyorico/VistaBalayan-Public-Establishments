@@ -1063,15 +1063,27 @@ export default function TourismHome() {
     setDirectionsError('')
     setLocationStatus('loading')
 
+    const directionsWindow = window.open('', '_blank')
+    if (directionsWindow) {
+      directionsWindow.document.title = 'Loading directions…'
+      directionsWindow.document.body.innerHTML = '<p style="font-family: system-ui, sans-serif; padding: 2rem;">Getting your location to prepare directions…</p>'
+      directionsWindow.opener = null
+    }
+
     getMobileFriendlyLocation(
       (location) => {
         setUserLocation(location)
         setLocationStatus('ready')
-        const directionsWindow = window.open(getGoogleMapsDirectionsUrl(establishment, location), '_blank')
-        if (!directionsWindow) window.location.href = getGoogleMapsDirectionsUrl(establishment, location)
+        const directionsUrl = getGoogleMapsDirectionsUrl(establishment, location)
+        if (directionsWindow && !directionsWindow.closed) {
+          directionsWindow.location.href = directionsUrl
+          return
+        }
+        setDirectionsError('Directions could not open in a new tab. Allow pop-ups for this website, then click Get directions again. Your VistaBalayan page is still open.')
       },
       () => {
         setLocationStatus('blocked')
+        if (directionsWindow && !directionsWindow.closed) directionsWindow.close()
         setDirectionsError('Turn on Location Services and allow location access for this website before opening directions. Your location is required for an accurate route.')
       }
     )
