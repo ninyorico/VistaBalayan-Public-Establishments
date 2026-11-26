@@ -1103,6 +1103,18 @@ export default function TourismHome() {
       .slice(0, 4)
   }, [establishments, userLocation, routeDistances])
 
+  const recommendationEmptyMessage = recommendations.length > 0
+    ? ''
+    : !userLocation
+      ? 'Enable location to match recommendations to your road distance preference.'
+      : routeStatus === 'loading'
+        ? 'Calculating road distances for available establishments…'
+        : routeStatus === 'error'
+          ? 'Road distance is temporarily unavailable. Try again or choose any road distance.'
+          : behavior.preferences.maxDistanceKm !== null
+            ? `No ${behavior.preferences.categories.length === 1 ? behavior.preferences.categories[0].toLowerCase() : 'establishment'} is available within ${behavior.preferences.maxDistanceKm} km by road from your location.`
+            : 'No establishment matches your current recommendation preferences.'
+
   const selectedRating = selectedEstablishment ? ratingSummaries[selectedEstablishment.id] || emptyRatingSummary : emptyRatingSummary
   const selectedReviews = selectedEstablishment ? ratingReviews[selectedEstablishment.id] || [] : []
   const selectedPhotos = selectedEstablishment?.images?.filter((image) => typeof image === 'string' && image.trim().length > 0) || []
@@ -1250,7 +1262,7 @@ export default function TourismHome() {
                       <p className="text-sm font-semibold text-[#193364]">AI-assisted recommendations</p>
                     </div>
                     <div className="space-y-2">
-                      {recommendations.map((est) => (
+                      {recommendations.length > 0 ? recommendations.map((est) => (
                         <button key={est.id} type="button" onClick={() => openDetails(est)} className="w-full rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-3 text-left transition hover:bg-[#F5F8FF]">
                           <p className="truncate font-semibold text-[#193364]">{est.name}</p>
                           <RecommendationExplanationPreview
@@ -1259,7 +1271,12 @@ export default function TourismHome() {
                             loading={recommendationExplanationRequests.current.has(`${est.id}:${getDistanceCacheKey(est.distance)}`)}
                           />
                         </button>
-                      ))}
+                      )) : (
+                        <div className="rounded-2xl border border-dashed border-[#AFB3B5] bg-[#E5E8E1] p-4 text-sm text-slate-600" role="status">
+                          <p className="font-semibold text-[#193364]">No establishment to recommend</p>
+                          <p className="mt-1">{recommendationEmptyMessage}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1491,7 +1508,7 @@ export default function TourismHome() {
             {mobileDiscoveryPanel === 'recommendations' ? (
               <div className="space-y-3">
                 <p className="text-sm leading-5 text-slate-600">AI-assisted recommendations of nearby tourist establishments based on your searches, location, or preferences. Open a pick to see the explanation.</p>
-                {recommendations.map((est) => (
+                {recommendations.length > 0 ? recommendations.map((est) => (
                   <button
                     key={est.id}
                     type="button"
@@ -1512,7 +1529,12 @@ export default function TourismHome() {
                       </div>
                     </div>
                   </button>
-                ))}
+                )) : (
+                  <div className="rounded-2xl border border-dashed border-[#AFB3B5] bg-[#E5E8E1] p-4 text-sm text-slate-600" role="status">
+                    <p className="font-semibold text-[#193364]">No establishment to recommend</p>
+                    <p className="mt-1">{recommendationEmptyMessage}</p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-3">
