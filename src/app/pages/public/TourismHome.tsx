@@ -112,6 +112,7 @@ interface UserLocation {
 interface RecommendationPreferences {
   categories: string[]
   maxDistanceKm: number | null
+  minimumRating: number | null
 }
 
 interface BehaviorProfile {
@@ -158,7 +159,7 @@ const emptyBehavior: BehaviorProfile = {
   categoryClicks: {},
   searches: [],
   searchCounts: {},
-  preferences: { categories: [], maxDistanceKm: null },
+  preferences: { categories: [], maxDistanceKm: null, minimumRating: null },
 }
 
 const getPublicCategory = (type = '', dotClassification: string | null = '') => {
@@ -282,6 +283,8 @@ const readBehavior = (): BehaviorProfile => {
         ...emptyBehavior.preferences,
         ...(preferences || {}),
         categories: Array.isArray(preferences?.categories) ? preferences.categories : [],
+        maxDistanceKm: typeof preferences?.maxDistanceKm === 'number' ? preferences.maxDistanceKm : null,
+        minimumRating: typeof preferences?.minimumRating === 'number' ? preferences.minimumRating : null,
       },
       categoryClicks: { ...emptyBehavior.categoryClicks, ...(parsed.categoryClicks || {}) },
       searchCounts: { ...emptyBehavior.searchCounts, ...(parsed.searchCounts || {}) },
@@ -1033,6 +1036,9 @@ export default function TourismHome() {
         const searchBoost = searchMatches.reduce((boost, [, count]) => boost + Math.min(count * 4, 20), 0)
         const featuredBoost = est.featured ? 8 : 0
         const distanceScore = distance === null ? 0 : Math.max(0, 100 - distance * 18)
+        const averageRating = ratingSummaries[est.id]?.average || 0
+        const ratingPreferenceMatch = behavior.preferences.minimumRating === null || averageRating >= behavior.preferences.minimumRating
+        if (!ratingPreferenceMatch) return null
         const preferenceCategoryMatch = behavior.preferences.categories.includes(publicCategory)
         const preferenceDistanceMatch = behavior.preferences.maxDistanceKm === null || (distance !== null && distance <= behavior.preferences.maxDistanceKm)
         if (behavior.preferences.categories.length > 0 && !preferenceCategoryMatch) return null
@@ -1077,7 +1083,7 @@ export default function TourismHome() {
       }
     }
     return selected
-  }, [establishments, behavior, userLocation, routeDistances])
+  }, [establishments, behavior, userLocation, routeDistances, ratingSummaries])
 
   useEffect(() => {
     if (recommendations.length > 0 && (window.innerWidth >= 1024 || mobileDiscoveryPanel === 'recommendations')) {
@@ -1189,7 +1195,7 @@ export default function TourismHome() {
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <Button type="button" variant="outline" onClick={() => setPreferenceEditorOpen((current) => !current)} className="rounded-2xl border-[#AFB3B5] bg-[#F5F8FF] text-xs font-semibold text-[#193364] shadow-none">
                   <Sparkles className="h-4 w-4" />
-                  {behavior.preferences.categories.length > 0 || behavior.preferences.maxDistanceKm !== null ? 'Edit recommendation preferences' : 'Set recommendation preferences'}
+                  {behavior.preferences.categories.length > 0 || behavior.preferences.maxDistanceKm !== null || behavior.preferences.minimumRating !== null ? 'Edit recommendation preferences' : 'Set recommendation preferences'}
                 </Button>
                 <span className="text-xs text-slate-500">Used with your searches, viewed listings, and proximity.</span>
               </div>
@@ -1205,6 +1211,11 @@ export default function TourismHome() {
                   <label className="mt-3 block text-xs font-semibold text-[#193364]">Maximum road distance
                     <select value={behavior.preferences.maxDistanceKm ?? ''} onChange={(event) => { const value = event.target.value ? Number(event.target.value) : null; const next = { ...behavior, preferences: { ...behavior.preferences, maxDistanceKm: value } }; setBehavior(next); saveBehavior(next) }} className="mt-1 w-full rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] px-3 py-2 text-sm font-normal">
                       <option value="">Any distance</option><option value="5">Within 5 km</option><option value="10">Within 10 km</option><option value="25">Within 25 km</option>
+                    </select>
+                  </label>
+                  <label className="mt-3 block text-xs font-semibold text-[#193364]">Minimum rating
+                    <select value={behavior.preferences.minimumRating ?? ''} onChange={(event) => { const value = event.target.value ? Number(event.target.value) : null; const next = { ...behavior, preferences: { ...behavior.preferences, minimumRating: value } }; setBehavior(next); saveBehavior(next) }} className="mt-1 w-full rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] px-3 py-2 text-sm font-normal">
+                      <option value="">Any rating</option><option value="3">3.0 stars or higher</option><option value="4">4.0 stars or higher</option><option value="4.5">4.5 stars or higher</option>
                     </select>
                   </label>
                   <p className="mt-2 text-xs text-slate-500">These choices are stored locally only after preferences consent and can be changed or cleared at any time.</p>
