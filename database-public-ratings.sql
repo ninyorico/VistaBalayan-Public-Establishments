@@ -188,6 +188,14 @@ CREATE POLICY "Anyone can read review photos"
   TO anon, authenticated
   USING (bucket_id = 'review-photos');
 
+ALTER TABLE public.establishment_ratings
+  ADD COLUMN IF NOT EXISTS reviewer_user_id UUID REFERENCES auth.users(id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS establishment_ratings_verified_user_unique
+  ON public.establishment_ratings (establishment_id, reviewer_user_id)
+  WHERE reviewer_user_id IS NOT NULL;
+
+
 DROP FUNCTION IF EXISTS public.submit_establishment_rating(UUID, TEXT, INTEGER);
 DROP FUNCTION IF EXISTS public.submit_establishment_rating(UUID, TEXT, INTEGER, TEXT);
 DROP FUNCTION IF EXISTS public.submit_establishment_rating(UUID, TEXT, INTEGER, TEXT, TEXT);
@@ -211,67 +219,31 @@ DECLARE
   normalized_comment TEXT := NULLIF(trim(p_comment), '');
   normalized_reviewer_name TEXT := NULLIF(trim(p_reviewer_name), '');
   normalized_photo_path TEXT := NULLIF(trim(p_photo_path), '');
+  confirmed_email TIMESTAMPTZ;
 BEGIN
-  IF p_establishment_id IS NULL THEN
-    RAISE EXCEPTION 'establishment_id is required';
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'verified account is required';
   END IF;
-
-  IF normalized_token IS NULL OR length(normalized_token) < 16 OR length(normalized_token) > 128 THEN
-    RAISE EXCEPTION 'valid visitor token is required';
+  SELECT email_confirmed_at INTO confirmed_email FROM auth.users WHERE id = auth.uid();
+  IF confirmed_email IS NULL THEN
+    RAISE EXCEPTION 'email verification is required before rating';
   END IF;
-
-  IF p_rating IS NULL OR p_rating < 1 OR p_rating > 5 THEN
-    RAISE EXCEPTION 'rating must be between 1 and 5';
-  END IF;
-
-  IF normalized_comment IS NOT NULL AND char_length(normalized_comment) > 500 THEN
-    RAISE EXCEPTION 'comment must be 500 characters or fewer';
-  END IF;
-
-  IF normalized_reviewer_name IS NULL THEN
-    RAISE EXCEPTION 'reviewer name is required';
-  END IF;
-
-  IF char_length(normalized_reviewer_name) > 80 THEN
-    RAISE EXCEPTION 'reviewer name must be 80 characters or fewer';
-  END IF;
-
-  IF normalized_photo_path IS NOT NULL
-     AND normalized_photo_path !~ '^[0-9a-f-]{36}/[0-9a-f-]{36}\.(jpg|jpeg|png|webp)$' THEN
-    RAISE EXCEPTION 'invalid review photo path';
-  END IF;
-
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.establishments establishments
-    WHERE establishments.id = p_establishment_id
-      AND establishments.status = 'active'
-      AND (
-        LOWER(establishments.type) LIKE '%hotel%'
-        OR LOWER(establishments.type) LIKE '%inn%'
-        OR LOWER(establishments.type) LIKE '%lodge%'
-        OR LOWER(establishments.type) LIKE '%resort%'
-        OR LOWER(establishments.type) LIKE '%pool%'
-        OR LOWER(establishments.type) LIKE '%farm%'
-      )
-  ) INTO public_establishment_exists;
-
-  IF NOT public_establishment_exists THEN
-    RAISE EXCEPTION 'establishment is not publicly rateable';
-  END IF;
-
+  IF p_establishment_id IS NULL THEN RAISE EXCEPTION 'establishment_id is required'; END IF;
+  IF normalized_token IS NULL OR length(normalized_token) < 16 OR length(normalized_token) > 128 THEN RAISE EXCEPTION 'valid visitor token is required'; END IF;
+  IF p_rating IS NULL OR p_rating < 1 OR p_rating > 5 THEN RAISE EXCEPTION 'rating must be between 1 and 5'; END IF;
+  IF normalized_comment IS NOT NULL AND char_length(normalized_comment) > 500 THEN RAISE EXCEPTION 'comment must be 500 characters or fewer'; END IF;
+  IF normalized_reviewer_name IS NULL THEN RAISE EXCEPTION 'reviewer name is required'; END IF;
+  IF char_length(normalized_reviewer_name) > 80 THEN RAISE EXCEPTION 'reviewer name must be 80 characters or fewer'; END IF;
+  IF normalized_photo_path IS NOT NULL AND normalized_photo_path !~ '^[0-9a-f-]{36}/[0-9a-f-]{36}\.(jpg|jpeg|png|webp)$' THEN RAISE EXCEPTION 'invalid review photo path'; END IF;
+  SELECT EXISTS (SELECT 1 FROM public.establishments establishments WHERE establishments.id = p_establishment_id AND establishments.status = 'active' AND (LOWER(establishments.type) LIKE '%hotel%' OR LOWER(establishments.type) LIKE '%inn%' OR LOWER(establishments.type) LIKE '%lodge%' OR LOWER(establishments.type) LIKE '%resort%' OR LOWER(establishments.type) LIKE '%pool%' OR LOWER(establishments.type) LIKE '%farm%')) INTO public_establishment_exists;
+  IF NOT public_establishment_exists THEN RAISE EXCEPTION 'establishment is not publicly rateable'; END IF;
   token_hash := md5(normalized_token);
-
-  INSERT INTO public.establishment_ratings (establishment_id, visitor_token_hash, rating, reviewer_name, comment, photo_path)
-  VALUES (p_establishment_id, token_hash, p_rating, normalized_reviewer_name, normalized_comment, normalized_photo_path)
-  ON CONFLICT (establishment_id, visitor_token_hash)
-  DO UPDATE SET
-    rating = EXCLUDED.rating,
-    reviewer_name = EXCLUDED.reviewer_name,
-    comment = EXCLUDED.comment,
-    photo_path = EXCLUDED.photo_path;
+  INSERT INTO public.establishment_ratings (establishment_id, visitor_token_hash, reviewer_user_id, rating, reviewer_name, comment, photo_path)
+  VALUES (p_establishment_id, token_hash, auth.uid(), p_rating, normalized_reviewer_name, normalized_comment, normalized_photo_path)
+  ON CONFLICT (establishment_id, reviewer_user_id)
+  DO UPDATE SET visitor_token_hash = EXCLUDED.visitor_token_hash, rating = EXCLUDED.rating, reviewer_name = EXCLUDED.reviewer_name, comment = EXCLUDED.comment, photo_path = EXCLUDED.photo_path;
 END;
 $$;
 
 REVOKE ALL ON FUNCTION public.submit_establishment_rating(UUID, TEXT, INTEGER, TEXT, TEXT, TEXT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.submit_establishment_rating(UUID, TEXT, INTEGER, TEXT, TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.submit_establishment_rating(UUID, TEXT, INTEGER, TEXT, TEXT, TEXT) TO authenticated;

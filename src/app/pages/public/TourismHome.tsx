@@ -48,6 +48,10 @@ interface Establishment {
   total_rooms?: number
   latitude?: number
   longitude?: number
+  entrance_fee?: number | string | null
+  entrance_fee_currency?: string | null
+  entrance_fee_verified_at?: string | null
+  entrance_fee_verified_by?: string | null
 }
 
 interface RatingBreakdown {
@@ -92,11 +96,12 @@ type RecommendationContext = {
   reason: string
   distance: number | null
   score: number
-  signals?: string[]
+  signals: string[]
 }
 
 type RecommendationEntry = Establishment & RecommendationContext & {
   publicCategory: string
+  primarySignalKey: string
 }
 
 interface UserLocation {
@@ -104,14 +109,21 @@ interface UserLocation {
   longitude: number
 }
 
+interface RecommendationPreferences {
+  categories: string[]
+  maxDistanceKm: number | null
+}
+
 interface BehaviorProfile {
   viewedIds: string[]
   categoryClicks: Record<string, number>
   searches: string[]
   searchCounts: Record<string, number>
+  preferences: RecommendationPreferences
 }
 
 const BEHAVIOR_KEY = 'vistabalayan_public_behavior_v1'
+const RECOMMENDATION_PREFERENCES_KEY = 'vistabalayan_public_recommendation_preferences_v1'
 const RATING_VISITOR_KEY = 'vistabalayan_public_rating_visitor_v1'
 const REVIEWER_NAME_KEY = 'vistabalayan_public_reviewer_name_v1'
 const LEGACY_LOCAL_RATINGS_KEY = 'vistabalayan_public_local_ratings_v1'
@@ -146,6 +158,7 @@ const emptyBehavior: BehaviorProfile = {
   categoryClicks: {},
   searches: [],
   searchCounts: {},
+  preferences: { categories: [], maxDistanceKm: null },
 }
 
 const getPublicCategory = (type = '', dotClassification: string | null = '') => {
@@ -259,23 +272,29 @@ const readBehavior = (): BehaviorProfile => {
   if (!hasPreferencesConsent()) return emptyBehavior
   try {
     const stored = window.localStorage.getItem(BEHAVIOR_KEY)
-    return stored
-      ? {
-          ...emptyBehavior,
-          ...JSON.parse(stored),
-          categoryClicks: { ...emptyBehavior.categoryClicks, ...(JSON.parse(stored).categoryClicks || {}) },
-          searchCounts: { ...emptyBehavior.searchCounts, ...(JSON.parse(stored).searchCounts || {}) },
-        }
-      : emptyBehavior
+    const savedPreferences = window.localStorage.getItem(RECOMMENDATION_PREFERENCES_KEY)
+    const parsed = stored ? JSON.parse(stored) : {}
+    const preferences = savedPreferences ? JSON.parse(savedPreferences) : parsed.preferences
+    return {
+      ...emptyBehavior,
+      ...parsed,
+      preferences: {
+        ...emptyBehavior.preferences,
+        ...(preferences || {}),
+        categories: Array.isArray(preferences?.categories) ? preferences.categories : [],
+      },
+      categoryClicks: { ...emptyBehavior.categoryClicks, ...(parsed.categoryClicks || {}) },
+      searchCounts: { ...emptyBehavior.searchCounts, ...(parsed.searchCounts || {}) },
+    }
   } catch {
     return emptyBehavior
   }
 }
 
 const saveBehavior = (behavior: BehaviorProfile) => {
-  if (typeof window === 'undefined') return
-  if (!hasPreferencesConsent()) return
+  if (typeof window === 'undefined' || !hasPreferencesConsent()) return
   window.localStorage.setItem(BEHAVIOR_KEY, JSON.stringify(behavior))
+  window.localStorage.setItem(RECOMMENDATION_PREFERENCES_KEY, JSON.stringify(behavior.preferences))
 }
 
 const getRatingVisitorToken = () => {
@@ -417,8 +436,13 @@ export default function TourismHome() {
   const [selectedEstablishment, setSelectedEstablishment] = useState<Establishment | null>(null)
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0)
   const [behavior, setBehavior] = useState<BehaviorProfile>(emptyBehavior)
+  const [preferenceEditorOpen, setPreferenceEditorOpen] = useState(false)
   const [ratingSummaries, setRatingSummaries] = useState<Record<string, RatingSummary>>({})
   const [ratingVisitorToken, setRatingVisitorToken] = useState('')
+  const [authUser, setAuthUser] = useState<{ id: string; email?: string; email_confirmed_at?: string | null } | null>(null)
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authMessage, setAuthMessage] = useState('')
   const [submittingRating, setSubmittingRating] = useState(false)
   const [ratingMessage, setRatingMessage] = useState('')
   const [selectedReviewRating, setSelectedReviewRating] = useState(0)
@@ -547,7 +571,25 @@ export default function TourismHome() {
     const visitorToken = getRatingVisitorToken()
     setRatingVisitorToken(visitorToken)
     fetchEstablishments(visitorToken)
+    void supabase.auth.getUser().then(({ data }) => setAuthUser(data.user ? { id: data.user.id, email: data.user.email, email_confirmed_at: data.user.email_confirmed_at } : null))
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user
+      setAuthUser(user ? { id: user.id, email: user.email, email_confirmed_at: user.email_confirmed_at } : null)
+    })
+    return () => authListener.subscription.unsubscribe()
   }, [])
+
+  const signInForRating = async () => {
+    setAuthMessage('')
+    const { error } = await supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPassword })
+    setAuthMessage(error ? error.message : 'Signed in. Confirm your email before submitting a rating.')
+  }
+
+  const signUpForRating = async () => {
+    setAuthMessage('')
+    const { error } = await supabase.auth.signUp({ email: authEmail.trim(), password: authPassword, options: { emailRedirectTo: window.location.origin } })
+    setAuthMessage(error ? error.message : 'Account created. Check your email, verify it, then sign in to submit a rating.')
+  }
 
   const fetchEstablishments = async (visitorToken = ratingVisitorToken) => {
     setLoading(true)
@@ -628,7 +670,10 @@ export default function TourismHome() {
 
   const submitRating = async () => {
     if (!selectedEstablishment || submittingRating || selectedReviewRating < 1) return
-
+    if (!authUser?.email_confirmed_at) {
+      setRatingMessage('Please create or sign in to a verified email account before submitting a rating.')
+      return
+    }
     const visitorToken = ratingVisitorToken || getRatingVisitorToken()
     if (!ratingVisitorToken) setRatingVisitorToken(visitorToken)
 
@@ -974,7 +1019,7 @@ export default function TourismHome() {
         .filter(Boolean)
     )
 
-    const scored = establishments
+    const scored = (establishments
       .filter((est) => !viewedIds.has(est.id))
       .map((est) => {
         const publicCategory = getPublicCategory(est.type, est.dot_classification) || 'Resort'
@@ -988,7 +1033,12 @@ export default function TourismHome() {
         const searchBoost = searchMatches.reduce((boost, [, count]) => boost + Math.min(count * 4, 20), 0)
         const featuredBoost = est.featured ? 8 : 0
         const distanceScore = distance === null ? 0 : Math.max(0, 100 - distance * 18)
-        const score = distanceScore + categoryBoost * 7 + (viewedCategoryMatch ? 4 : 0) + searchBoost + featuredBoost
+        const preferenceCategoryMatch = behavior.preferences.categories.includes(publicCategory)
+        const preferenceDistanceMatch = behavior.preferences.maxDistanceKm === null || (distance !== null && distance <= behavior.preferences.maxDistanceKm)
+        if (behavior.preferences.categories.length > 0 && !preferenceCategoryMatch) return null
+        if (!preferenceDistanceMatch) return null
+        const preferenceBoost = preferenceCategoryMatch ? 24 : 0
+        const score = distanceScore + categoryBoost * 7 + (viewedCategoryMatch ? 4 : 0) + searchBoost + featuredBoost + preferenceBoost
         const signals = [
           ...(distance !== null ? [{ key: 'distance', text: `About ${distance.toFixed(1)} km by road from your location.`, weight: distanceScore }] : []),
           ...(searchMatches.length > 0 ? [{ key: 'search', text: `Matches your search for "${searchMatches[0][0]}".`, weight: searchBoost }] : []),
@@ -1007,12 +1057,13 @@ export default function TourismHome() {
           primarySignalKey: primarySignal.key,
         }
       })
-      .sort((a, b) => b.score - a.score)
+      .filter(Boolean)) as RecommendationEntry[]
+    const sortedScored = scored.sort((a, b) => b.score - a.score)
 
     const selected: typeof scored = []
     const usedSignalKeys = new Set<string>()
     const usedCategories = new Set<string>()
-    for (const candidate of scored) {
+    for (const candidate of sortedScored) {
       if (selected.length >= 3) break
       if (usedSignalKeys.has(candidate.primarySignalKey) || usedCategories.has(candidate.publicCategory)) continue
       selected.push(candidate)
@@ -1020,7 +1071,7 @@ export default function TourismHome() {
       usedCategories.add(candidate.publicCategory)
     }
     if (selected.length < 3) {
-      for (const candidate of scored) {
+      for (const candidate of sortedScored) {
         if (selected.length >= 3) break
         if (!selected.some((item) => item.id === candidate.id)) selected.push(candidate)
       }
@@ -1123,6 +1174,30 @@ export default function TourismHome() {
                   className="h-14 rounded-[1.25rem] border border-[#AFB3B5] bg-[#E0E5EC] pl-12 pr-4 text-base text-[#193364] shadow-[inset_3px_3px_6px_rgba(163,177,198,0.30),inset_-3px_-3px_6px_rgba(255,255,255,0.55)] placeholder:text-[#6C7895] focus-visible:border-[#193364]/45 focus-visible:ring-2 focus-visible:ring-[#193364]/20"
                 />
               </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" onClick={() => setPreferenceEditorOpen((current) => !current)} className="rounded-2xl border-[#AFB3B5] bg-[#F5F8FF] text-xs font-semibold text-[#193364] shadow-none">
+                  <Sparkles className="h-4 w-4" />
+                  {behavior.preferences.categories.length > 0 || behavior.preferences.maxDistanceKm !== null ? 'Edit recommendation preferences' : 'Set recommendation preferences'}
+                </Button>
+                <span className="text-xs text-slate-500">Used with your searches, viewed listings, and proximity.</span>
+              </div>
+              {preferenceEditorOpen && (
+                <div className="mt-3 rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-4 text-sm">
+                  <p className="font-semibold text-[#193364]">What would you prefer?</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {['Resort', 'Hotel'].map((category) => {
+                      const selected = behavior.preferences.categories.includes(category)
+                      return <button key={category} type="button" onClick={() => { const categories = selected ? behavior.preferences.categories.filter((item) => item !== category) : [...behavior.preferences.categories, category]; const next = { ...behavior, preferences: { ...behavior.preferences, categories } }; setBehavior(next); saveBehavior(next) }} className={`rounded-full px-3 py-2 text-xs font-semibold ${selected ? 'bg-[#193364] text-white' : 'bg-[#F5F8FF] text-[#193364]'}`}>{category}s</button>
+                    })}
+                  </div>
+                  <label className="mt-3 block text-xs font-semibold text-[#193364]">Maximum road distance
+                    <select value={behavior.preferences.maxDistanceKm ?? ''} onChange={(event) => { const value = event.target.value ? Number(event.target.value) : null; const next = { ...behavior, preferences: { ...behavior.preferences, maxDistanceKm: value } }; setBehavior(next); saveBehavior(next) }} className="mt-1 w-full rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] px-3 py-2 text-sm font-normal">
+                      <option value="">Any distance</option><option value="5">Within 5 km</option><option value="10">Within 10 km</option><option value="25">Within 25 km</option>
+                    </select>
+                  </label>
+                  <p className="mt-2 text-xs text-slate-500">These choices are stored locally only after preferences consent and can be changed or cleared at any time.</p>
+                </div>
+              )}
               <div className="mt-1 grid grid-cols-2 gap-2 lg:hidden">
                 <Button
                   type="button"
@@ -1181,7 +1256,7 @@ export default function TourismHome() {
                           <RecommendationExplanationPreview
                             explanation={recommendationExplanations[est.id]}
                             fallback={getSafeRecommendationReason(est.reason)}
-                            loading={recommendationExplanationRequests.current.has(est.id)}
+                            loading={recommendationExplanationRequests.current.has(`${est.id}:${getDistanceCacheKey(est.distance)}`)}
                           />
                         </button>
                       ))}
@@ -1432,7 +1507,7 @@ export default function TourismHome() {
                         <RecommendationExplanationPreview
                           explanation={recommendationExplanations[est.id]}
                           fallback={getSafeRecommendationReason(est.reason)}
-                          loading={recommendationExplanationRequests.current.has(est.id)}
+                          loading={recommendationExplanationRequests.current.has(`${est.id}:${getDistanceCacheKey(est.distance)}`)}
                         />
                       </div>
                     </div>
@@ -1593,6 +1668,9 @@ export default function TourismHome() {
                 {selectedEstablishment.contact_number && <InfoRow icon={Phone} text={selectedEstablishment.contact_number} />}
                 {selectedEstablishment.email && <InfoRow icon={Mail} text={selectedEstablishment.email} />}
                 {selectedEstablishment.opening_hours && <InfoRow icon={Clock} text={selectedEstablishment.opening_hours} />}
+                <InfoRow icon={MessageSquare} text={selectedEstablishment.entrance_fee_verified_at && selectedEstablishment.entrance_fee !== null && selectedEstablishment.entrance_fee !== undefined
+                  ? `Entrance fee: ${selectedEstablishment.entrance_fee_currency || 'PHP'} ${selectedEstablishment.entrance_fee} · Verified ${new Date(selectedEstablishment.entrance_fee_verified_at).toLocaleDateString()}`
+                  : 'Entrance fee: Not verified by the Municipal Tourism Office'} />
                 {selectedEstablishment.website_url && (
                   <a href={selectedEstablishment.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-2xl bg-[#F5F8FF] p-3 font-medium text-[#193364] hover:bg-[#E5E8E1]">
                     <Globe className="h-4 w-4" strokeWidth={1.8} />
@@ -1649,6 +1727,7 @@ export default function TourismHome() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <h3 className="font-semibold leading-6 text-slate-950">Rate this establishment</h3>
+                    <p className="mt-1 text-xs text-slate-500">Verified email accounts are required to submit or update ratings.</p>
                   </div>
                   <div className="grid shrink-0 grid-cols-5 gap-0.5" aria-label="Choose a rating from 1 to 5 stars">
                     {[1, 2, 3, 4, 5].map((rating) => (
@@ -1669,6 +1748,18 @@ export default function TourismHome() {
                   </div>
                 </div>
                 <div className="mt-4 space-y-3">
+                  {!authUser?.email_confirmed_at && (
+                    <div className="rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-3">
+                      <p className="text-xs leading-5 text-slate-600">Sign in or create an account, then verify the email address sent by Supabase before submitting.</p>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} type="email" placeholder="Email address" className="rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] p-2.5 text-sm" />
+                        <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} type="password" placeholder="Password (6+ characters)" className="rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] p-2.5 text-sm" />
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2"><Button type="button" onClick={() => void signInForRating()} variant="outline" className="rounded-xl text-xs">Sign in</Button><Button type="button" onClick={() => void signUpForRating()} variant="outline" className="rounded-xl text-xs">Create account</Button></div>
+                      {authMessage && <p className="mt-2 text-xs text-slate-600">{authMessage}</p>}
+                    </div>
+                  )}
+                  {authUser?.email_confirmed_at && <p className="text-xs font-medium text-emerald-700">Verified account: {authUser.email}</p>}
                   <input
                     type="text"
                     value={reviewerName}
