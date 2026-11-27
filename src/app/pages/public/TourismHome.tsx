@@ -472,7 +472,8 @@ export default function TourismHome() {
   const [authPassword, setAuthPassword] = useState('')
   const [authMessage, setAuthMessage] = useState('')
   const [authOtp, setAuthOtp] = useState('')
-  const [pendingVerificationEmail, setPendingVerificationEmail] = useState('')
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState(() => typeof window === 'undefined' ? '' : window.localStorage.getItem('vistabalayan_pending_signup_email_v1') || '')
+  const [authBusy, setAuthBusy] = useState(false)
   const [submittingRating, setSubmittingRating] = useState(false)
   const [ratingMessage, setRatingMessage] = useState('')
   const [selectedReviewRating, setSelectedReviewRating] = useState(0)
@@ -627,6 +628,7 @@ export default function TourismHome() {
   }
 
   const signUpForRating = async () => {
+    if (authBusy) return
     setAuthMessage('')
     const normalizedEmail = authEmail.trim().toLowerCase()
     if (!normalizedEmail || !authPassword) {
@@ -637,23 +639,37 @@ export default function TourismHome() {
       setAuthMessage('Your password must be at least 6 characters long.')
       return
     }
-    const displayName = normalizedEmail.split('@')[0].slice(0, 80)
-    const { data, error } = await supabase.auth.signUp({
-      email: normalizedEmail,
-      password: authPassword,
-      options: { data: { display_name: displayName, full_name: displayName, name: displayName } },
-    })
-    if (error) {
-      setAuthMessage(error.message)
+    if (pendingVerificationEmail === normalizedEmail) {
+      setAuthMessage('A verification email was already sent to this address. Enter the code below or choose Resend code.')
       return
     }
-    if (data.session) {
-      setAuthMessage('Account created and signed in. Confirm your email before submitting a rating.')
-      return
+    setAuthBusy(true)
+    try {
+      const displayName = normalizedEmail.split('@')[0].slice(0, 80)
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password: authPassword,
+        options: { data: { display_name: displayName, full_name: displayName, name: displayName } },
+      })
+      if (error) {
+        setAuthMessage(error.message)
+        return
+      }
+      if (data.user?.identities && data.user.identities.length === 0) {
+        setAuthMessage('An account already exists for this email. Use Sign in or Forgot password instead.')
+        return
+      }
+      if (data.session) {
+        setAuthMessage('Account created and signed in. Confirm your email before submitting a rating.')
+        return
+      }
+      setPendingVerificationEmail(normalizedEmail)
+      window.localStorage.setItem('vistabalayan_pending_signup_email_v1', normalizedEmail)
+      setAuthOtp('')
+      setAuthMessage('We sent a verification message to your email. Enter the 6-digit code below to finish creating your account.')
+    } finally {
+      setAuthBusy(false)
     }
-    setPendingVerificationEmail(normalizedEmail)
-    setAuthOtp('')
-    setAuthMessage('We sent a 6-digit verification code to your email. Enter it below to finish creating your account.')
   }
 
   const verifyRatingEmail = async () => {
@@ -668,6 +684,7 @@ export default function TourismHome() {
     setAuthMessage(error ? error.message : 'Email verified. You are now signed in and can submit your rating.')
     if (!error) {
       setPendingVerificationEmail('')
+      window.localStorage.removeItem('vistabalayan_pending_signup_email_v1')
       setAuthOtp('')
     }
   }
@@ -1897,7 +1914,7 @@ export default function TourismHome() {
                         <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} type="email" placeholder="Email address" className="rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] p-2.5 text-sm" />
                         <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} type="password" placeholder="Password (6+ characters)" className="rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] p-2.5 text-sm" />
                       </div>
-                      <div className="mt-2 flex flex-wrap gap-2"><Button type="button" onClick={() => void signInForRating()} variant="outline" className="rounded-xl text-xs">Sign in</Button><Button type="button" onClick={() => void signUpForRating()} variant="outline" className="rounded-xl text-xs">Create account</Button><Button type="button" onClick={() => void sendPasswordRecovery()} variant="ghost" className="rounded-xl text-xs">Forgot password?</Button></div>
+                      <div className="mt-2 flex flex-wrap gap-2"><Button type="button" onClick={() => void signInForRating()} variant="outline" className="rounded-xl text-xs">Sign in</Button><Button type="button" onClick={() => void signUpForRating()} disabled={authBusy || pendingVerificationEmail === authEmail.trim().toLowerCase()} variant="outline" className="rounded-xl text-xs">{authBusy ? 'Creating…' : 'Create account'}</Button><Button type="button" onClick={() => void sendPasswordRecovery()} variant="ghost" className="rounded-xl text-xs">Forgot password?</Button></div>
                       {pendingVerificationEmail && <div className="mt-3 rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] p-3"><p className="text-xs text-slate-600">Enter the 6-digit code sent to <strong>{pendingVerificationEmail}</strong>.</p><div className="mt-2 flex flex-wrap gap-2"><input value={authOtp} onChange={(event) => setAuthOtp(event.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="OTP code" aria-label="Email verification code" className="min-w-0 flex-1 rounded-xl border border-[#AFB3B5] bg-white p-2.5 text-sm tracking-[0.3em]" /><Button type="button" onClick={() => void verifyRatingEmail()} className="rounded-xl bg-[#193364] text-xs text-white">Verify email</Button><Button type="button" onClick={() => void resendRatingEmailCode()} variant="ghost" className="rounded-xl text-xs">Resend code</Button></div></div>}
                       {authMessage && <p className="mt-2 text-xs text-slate-600">{authMessage}</p>}
                     </div>

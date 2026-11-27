@@ -44,7 +44,8 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
   const [otp, setOtp] = useState('')
-  const [pendingVerificationEmail, setPendingVerificationEmail] = useState('')
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState(() => typeof window === 'undefined' ? '' : window.localStorage.getItem('vistabalayan_pending_signup_email_v1') || '')
+  const [authBusy, setAuthBusy] = useState(false)
   const [editing, setEditing] = useState<string | null>(null)
   const [editRating, setEditRating] = useState(0)
   const [editComment, setEditComment] = useState('')
@@ -93,28 +94,43 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
   }
 
   const signUp = async () => {
+    if (authBusy) return
     const normalizedEmail = email.trim().toLowerCase()
     if (!normalizedEmail || password.length < 6) {
       setMessage('Enter an email address and a password with at least 6 characters.')
       return
     }
-    const displayName = normalizedEmail.split('@')[0].slice(0, 80)
-    const { data, error } = await supabase.auth.signUp({
-      email: normalizedEmail,
-      password,
-      options: { data: { display_name: displayName, full_name: displayName, name: displayName } },
-    })
-    if (error) {
-      setMessage(error.message)
+    if (pendingVerificationEmail === normalizedEmail) {
+      setMessage('A verification email was already sent to this address. Enter the code below or choose Resend code.')
       return
     }
-    if (data.session) {
-      setMessage('Account created and signed in. Check your verification status before submitting reviews.')
-      return
+    setAuthBusy(true)
+    try {
+      const displayName = normalizedEmail.split('@')[0].slice(0, 80)
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: { data: { display_name: displayName, full_name: displayName, name: displayName } },
+      })
+      if (error) {
+        setMessage(error.message)
+        return
+      }
+      if (data.user?.identities && data.user.identities.length === 0) {
+        setMessage('An account already exists for this email. Use Sign in or Forgot password instead.')
+        return
+      }
+      if (data.session) {
+        setMessage('Account created and signed in. Check your verification status before submitting reviews.')
+        return
+      }
+      setPendingVerificationEmail(normalizedEmail)
+      window.localStorage.setItem('vistabalayan_pending_signup_email_v1', normalizedEmail)
+      setOtp('')
+      setMessage('We sent a verification message to your email. Enter the 6-digit code below to finish creating your account.')
+    } finally {
+      setAuthBusy(false)
     }
-    setPendingVerificationEmail(normalizedEmail)
-    setOtp('')
-    setMessage('We sent a 6-digit verification code to your email. Enter it below to finish creating your account.')
   }
 
   const verifyEmail = async () => {
@@ -128,6 +144,7 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
     setMessage(error ? error.message : 'Email verified. You are now signed in.')
     if (!error) {
       setPendingVerificationEmail('')
+      window.localStorage.removeItem('vistabalayan_pending_signup_email_v1')
       setOtp('')
     }
   }
@@ -219,7 +236,7 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
               <GoogleSignInButton onError={setMessage} text="signin_with" />
               <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="Email address" className="w-full rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3 text-sm" />
               <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="Password" className="w-full rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3 text-sm" />
-              <div className="flex flex-wrap gap-2"><Button type="button" onClick={() => void signIn()} variant="outline" className="rounded-xl">Sign in</Button><Button type="button" onClick={() => void signUp()} variant="outline" className="rounded-xl">Create account</Button><Button type="button" onClick={() => void recoverPassword()} variant="ghost" className="rounded-xl">Forgot password?</Button></div>
+              <div className="flex flex-wrap gap-2"><Button type="button" onClick={() => void signIn()} variant="outline" className="rounded-xl">Sign in</Button><Button type="button" onClick={() => void signUp()} disabled={authBusy || pendingVerificationEmail === email.trim().toLowerCase()} variant="outline" className="rounded-xl">{authBusy ? 'Creating…' : 'Create account'}</Button><Button type="button" onClick={() => void recoverPassword()} variant="ghost" className="rounded-xl">Forgot password?</Button></div>
               {pendingVerificationEmail && <div className="rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3"><p className="text-xs text-slate-600">Enter the 6-digit code sent to <strong>{pendingVerificationEmail}</strong>.</p><div className="mt-2 flex flex-wrap gap-2"><input value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="OTP code" aria-label="Email verification code" className="min-w-0 flex-1 rounded-xl border border-[#AFB3B5] bg-white p-2.5 text-sm tracking-[0.3em]" /><Button type="button" onClick={() => void verifyEmail()} className="rounded-xl bg-[#193364] text-white">Verify email</Button><Button type="button" onClick={() => void resendEmailCode()} variant="ghost" className="rounded-xl">Resend code</Button></div></div>}
             </div>
           ) : (
