@@ -29,4 +29,6 @@ export default defineConfig({
     },
   },
   assetsInclude: ['**/*.svg', '**/*.csv'],
+  // Preserve the user's NEXT_PUBLIC naming convention in this Vite app.
+  envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
 })

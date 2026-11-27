@@ -39,7 +39,7 @@ export default function GoogleSignInButton({
       if (!clientId) {
         setAvailable(false)
         setBusy(false)
-        onError?.('Google Sign-In is not configured. Add VITE_GOOGLE_CLIENT_ID to the environment.')
+        onError?.('Google Sign-In is not configured. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to the environment.')
         return
       }
 

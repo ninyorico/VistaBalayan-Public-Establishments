@@ -36,7 +36,7 @@ const GOOGLE_SCRIPT_ID = 'google-identity-services-script'
 const GOOGLE_SCRIPT_SRC = 'https://accounts.google.com/gsi/client'
 
 export const getGoogleClientId = () => {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  const clientId = import.meta.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
   return typeof clientId === 'string' ? clientId.trim() : ''
 }
 
