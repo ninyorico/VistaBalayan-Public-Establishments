@@ -26,7 +26,28 @@ set public = true,
     allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp']::text[];
 
 -- Remove the old policies, including versions that allowed anon uploads or
--- queried other tables. The upload request only needs a scoped UUID path.
+-- queried other tables. First remove any stale policy that directly references
+-- reviewer_user_id; Storage uploads happen before the review RPC and must not
+-- depend on that review-table column.
+do $$
+declare
+  stale_policy record;
+begin
+  for stale_policy in
+    select policyname
+      from pg_policies
+     where schemaname = 'storage'
+       and tablename = 'objects'
+       and (
+         coalesce(qual, '') ilike '%reviewer_user_id%'
+         or coalesce(with_check, '') ilike '%reviewer_user_id%'
+       )
+  loop
+    execute format('drop policy if exists %I on storage.objects', stale_policy.policyname);
+  end loop;
+end;
+$$;
+
 drop policy if exists "Public can upload review photos" on storage.objects;
 drop policy if exists "Anyone can upload review photos" on storage.objects;
 create policy "Public can upload review photos"
