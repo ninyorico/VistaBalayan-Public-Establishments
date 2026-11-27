@@ -101,33 +101,25 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
       return
     }
     if (pendingVerificationEmail === normalizedEmail) {
-      setMessage('A verification email was already sent to this address. Enter the code below or choose Resend code.')
+      setMessage('A verification code was already sent to this address. Enter the code below or choose Resend code.')
       return
     }
     setAuthBusy(true)
     try {
-      const displayName = normalizedEmail.split('@')[0].slice(0, 80)
-      const { data, error } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
-        options: { data: { display_name: displayName, full_name: displayName, name: displayName } },
+      const response = await fetch('/api/public-signup-send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail, password }),
       })
-      if (error) {
-        setMessage(error.message)
-        return
-      }
-      if (data.user?.identities && data.user.identities.length === 0) {
-        setMessage('An account already exists for this email. Use Sign in or Forgot password instead.')
-        return
-      }
-      if (data.session) {
-        setMessage('Account created and signed in. Check your verification status before submitting reviews.')
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        setMessage(result.error || 'Unable to send a verification code.')
         return
       }
       setPendingVerificationEmail(normalizedEmail)
       window.localStorage.setItem('vistabalayan_pending_signup_email_v1', normalizedEmail)
       setOtp('')
-      setMessage('We sent a verification message to your email. Enter the 6-digit code below to finish creating your account.')
+      setMessage('We sent a 6-digit verification code to your email. Enter it below to finish creating your account.')
     } finally {
       setAuthBusy(false)
     }
@@ -136,24 +128,52 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
   const verifyEmail = async () => {
     const normalizedEmail = pendingVerificationEmail.trim().toLowerCase()
     const token = otp.trim()
-    if (!normalizedEmail || !/^\d{6}$/.test(token)) {
-      setMessage('Enter the 6-digit code sent to your email.')
+    if (!normalizedEmail || password.length < 6 || !/^\d{6}$/.test(token)) {
+      setMessage('Enter your password and the 6-digit code sent to your email.')
       return
     }
-    const { error } = await supabase.auth.verifyOtp({ email: normalizedEmail, token, type: 'signup' })
-    setMessage(error ? error.message : 'Email verified. You are now signed in.')
-    if (!error) {
-      setPendingVerificationEmail('')
-      window.localStorage.removeItem('vistabalayan_pending_signup_email_v1')
-      setOtp('')
+    setAuthBusy(true)
+    try {
+      const response = await fetch('/api/public-signup-verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail, password, code: token }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        setMessage(result.error || 'Unable to verify the account.')
+        return
+      }
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password })
+      setMessage(signInError ? signInError.message : 'Email verified. You are now signed in.')
+      if (!signInError) {
+        setPendingVerificationEmail('')
+        window.localStorage.removeItem('vistabalayan_pending_signup_email_v1')
+        setOtp('')
+      }
+    } finally {
+      setAuthBusy(false)
     }
   }
 
   const resendEmailCode = async () => {
     const normalizedEmail = pendingVerificationEmail.trim().toLowerCase()
-    if (!normalizedEmail) return
-    const { error } = await supabase.auth.resend({ type: 'signup', email: normalizedEmail })
-    setMessage(error ? error.message : 'A new verification code was sent to your email.')
+    if (!normalizedEmail || password.length < 6) {
+      setMessage('Enter the password you used for signup before requesting another code.')
+      return
+    }
+    setAuthBusy(true)
+    try {
+      const response = await fetch('/api/public-signup-send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail, password }),
+      })
+      const result = await response.json().catch(() => ({}))
+      setMessage(response.ok ? 'A new verification code was sent to your email.' : (result.error || 'Unable to resend the code.'))
+    } finally {
+      setAuthBusy(false)
+    }
   }
 
 
