@@ -176,12 +176,12 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
             </div>
           ) : (
             <>
-              <div className="mt-5 flex flex-wrap items-center gap-4">
-                <div className="relative h-20 w-20 overflow-hidden rounded-full border-2 border-white bg-[#E5E8E1] shadow-[inset_3px_3px_7px_rgba(163,177,198,.35),inset_-3px_-3px_7px_rgba(255,255,255,.65)]">
+              <div className="mt-5 grid grid-cols-[auto,minmax(0,1fr)] items-center gap-x-4 gap-y-3 sm:grid-cols-[auto,minmax(0,1fr),auto]">
+                <div className="relative row-span-2 h-20 w-20 overflow-hidden rounded-full border-2 border-white bg-[#E5E8E1] shadow-[inset_3px_3px_7px_rgba(163,177,198,.35),inset_-3px_-3px_7px_rgba(255,255,255,.65)]">
                   {profile.avatar_url ? <img src={profile.avatar_url} alt={`${getAuthDisplayName(user)} profile`} className="h-full w-full object-cover" /> : <UserRound className="absolute inset-0 m-auto h-9 w-9 text-[#193364]" />}
                 </div>
-                <div className="min-w-0 flex-1"><p className="text-sm text-slate-600">Signed in as <strong>{user.email}</strong>.</p><p className="mt-1 text-lg font-semibold text-[#193364]">{getAuthDisplayName(user)}</p><p className="text-xs text-slate-500">Name is taken from your Google profile and cannot be changed here.</p></div>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-[#193364] px-4 py-2.5 text-sm font-semibold text-white"><Camera className="h-4 w-4" /> {uploadingPhoto ? 'Uploading…' : 'Change photo'}<input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={uploadingPhoto} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadProfilePhoto(file); event.currentTarget.value = '' }} /></label>
+                <div className="min-w-0"><p className="truncate text-sm text-slate-600">Signed in as <strong>{user.email}</strong>.</p><p className="mt-1 text-lg font-semibold text-[#193364]">{getAuthDisplayName(user)}</p><p className="text-xs text-slate-500">Name is taken from your Google profile and cannot be changed here.</p></div>
+                <label className="col-start-2 inline-flex w-fit cursor-pointer items-center gap-2 rounded-2xl bg-[#193364] px-4 py-2.5 text-sm font-semibold text-white sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:self-center"><Camera className="h-4 w-4" /> {uploadingPhoto ? 'Uploading…' : 'Change photo'}<input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={uploadingPhoto} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadProfilePhoto(file); event.currentTarget.value = '' }} /></label>
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-2"><Button type="button" onClick={() => void supabase.auth.signOut()} variant="outline" className="rounded-2xl"><LogOut className="h-4 w-4" /> Sign out</Button><span className="text-xs text-slate-500">Verification: {user.email_confirmed_at ? 'Verified' : 'Not verified'}.</span></div>
               <div className="mt-3"><Button type="button" onClick={() => void requestAccountDeletion()} variant="ghost" className="rounded-xl text-xs text-rose-700">Request account removal</Button></div>

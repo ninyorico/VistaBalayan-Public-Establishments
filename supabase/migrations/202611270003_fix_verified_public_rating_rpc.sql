@@ -5,6 +5,46 @@
 
 begin;
 
+-- These objects may be missing when the earlier ratings/profile SQL was
+-- committed but not applied to the live project. Make this migration safe to
+-- run against that partially migrated schema.
+alter table public.establishment_ratings
+  add column if not exists reviewer_user_id uuid references auth.users(id);
+
+create unique index if not exists establishment_ratings_verified_user_unique
+  on public.establishment_ratings (establishment_id, reviewer_user_id)
+  where reviewer_user_id is not null;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'review-photos',
+  'review-photos',
+  true,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp']::text[]
+)
+on conflict (id) do update
+set public = true,
+    file_size_limit = 5242880,
+    allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp']::text[];
+
+drop policy if exists "Public can upload review photos" on storage.objects;
+create policy "Public can upload review photos"
+on storage.objects for insert
+to authenticated
+with check (
+  bucket_id = 'review-photos'
+  and (storage.foldername(name))[1] in (
+    select e.id::text from public.establishments e where e.status = 'active'
+  )
+);
+
+drop policy if exists "Anyone can read review photos" on storage.objects;
+create policy "Anyone can read review photos"
+on storage.objects for select
+to anon, authenticated
+using (bucket_id = 'review-photos');
+
 drop function if exists public.submit_establishment_rating(uuid, text, integer);
 drop function if exists public.submit_establishment_rating(uuid, text, integer, text);
 drop function if exists public.submit_establishment_rating(uuid, text, integer, text, text);

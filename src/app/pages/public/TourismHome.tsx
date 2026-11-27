@@ -1859,10 +1859,6 @@ export default function TourismHome() {
                     </div>
                   )}
                   {verifiedPublicAccount && <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-medium text-emerald-700">Verified account: {authUser?.email}</p><Button type="button" onClick={() => void signOutPublicUser()} variant="ghost" className="rounded-xl text-xs text-slate-600"><LogOut className="h-4 w-4" /> Sign out</Button></div>}
-                  <div className="rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-3 text-sm text-slate-600">
-                    Review name: <strong className="text-[#193364]">{reviewerName || 'Your account profile'}</strong>
-                    <span className="mt-1 block text-xs text-slate-500">This comes from your Account profile. You can change it there.</span>
-                  </div>
                   <textarea
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value.slice(0, 500))}
