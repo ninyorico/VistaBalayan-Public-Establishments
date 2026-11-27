@@ -3,9 +3,9 @@ import assert from 'node:assert/strict'
 import { sortPublicEstablishments } from './directorySort.js'
 
 const establishments = [
-  { id: 'a', name: 'Alpha' },
-  { id: 'b', name: 'Bravo' },
-  { id: 'c', name: 'Charlie' },
+  { id: 'a', name: 'Alpha', featured: false },
+  { id: 'b', name: 'Bravo', featured: true },
+  { id: 'c', name: 'Charlie', featured: false },
 ]
 const summaries = {
   a: { average: 4.2, count: 2 },
@@ -13,8 +13,8 @@ const summaries = {
   c: { average: null, count: 5 },
 }
 
-test('preserves recommendation order by default', () => {
-  assert.deepEqual(sortPublicEstablishments(establishments, summaries).map((item) => item.id), ['a', 'b', 'c'])
+test('sorts recommended listings by featured status, then review evidence', () => {
+  assert.deepEqual(sortPublicEstablishments(establishments, summaries).map((item) => item.id), ['b', 'c', 'a'])
 })
 
 test('sorts by rating and puts unrated establishments last', () => {

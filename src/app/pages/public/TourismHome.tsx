@@ -101,6 +101,7 @@ interface RatingReview {
   reviewer_name: string | null
   created_at: string
   photo_path?: string | null
+  reviewer_avatar_url?: string | null
 }
 
 type RecommendationContext = {
@@ -323,6 +324,11 @@ const getRatingVisitorToken = () => {
   return token
 }
 
+const getAuthAvatarUrl = (user: { user_metadata?: Record<string, unknown> | null } | null) => {
+  const value = user?.user_metadata?.avatar_url || user?.user_metadata?.picture
+  return typeof value === 'string' && value.trim() ? value.trim() : ''
+}
+
 const getAuthDisplayName = (user: { email?: string | null; user_metadata?: Record<string, unknown> | null } | null) => {
   const metadata = user?.user_metadata || {}
   const metadataName = [metadata.full_name, metadata.name, metadata.display_name]
@@ -393,6 +399,24 @@ const summarizeRatings = (ratings: Array<{ establishment_id: string; average_rat
   }, {})
 }
 
+const summarizeReviewRows = (reviews: Array<{ establishment_id: string; rating: number; comment?: string | null }>) => {
+  const grouped = reviews.reduce<Record<string, Array<{ rating: number; comment?: string | null }>>>((acc, review) => {
+    if (!acc[review.establishment_id]) acc[review.establishment_id] = []
+    acc[review.establishment_id].push(review)
+    return acc
+  }, {})
+  return Object.fromEntries(Object.entries(grouped).map(([establishmentId, rows]) => {
+    const breakdown: RatingBreakdown = { ...emptyBreakdown }
+    rows.forEach(({ rating }) => { if (rating >= 1 && rating <= 5) breakdown[rating as keyof RatingBreakdown] += 1 })
+    return [establishmentId, {
+      average: rows.reduce((sum, row) => sum + Number(row.rating), 0) / rows.length,
+      count: rows.length,
+      breakdown,
+      commentCount: rows.filter((row) => Boolean(row.comment?.trim())).length,
+    }]
+  })) as Record<string, RatingSummary>
+}
+
 const normalizeListingImages = (value: unknown): string[] => {
   let candidates: unknown[] = []
   if (Array.isArray(value)) {
@@ -450,7 +474,7 @@ export default function TourismHome() {
   const [preferenceEditorOpen, setPreferenceEditorOpen] = useState(false)
   const [ratingSummaries, setRatingSummaries] = useState<Record<string, RatingSummary>>({})
   const [ratingVisitorToken, setRatingVisitorToken] = useState('')
-  const [authUser, setAuthUser] = useState<{ id: string; email?: string | null; email_confirmed_at?: string | null; provider?: string; display_name?: string } | null>(null)
+  const [authUser, setAuthUser] = useState<{ id: string; email?: string | null; email_confirmed_at?: string | null; provider?: string; display_name?: string; avatar_url?: string } | null>(null)
   const [authEmail, setAuthEmail] = useState('')
   const [authPassword, setAuthPassword] = useState('')
   const [authMessage, setAuthMessage] = useState('')
@@ -584,7 +608,7 @@ export default function TourismHome() {
     setRatingVisitorToken(visitorToken)
     fetchEstablishments(visitorToken)
     const syncPublicUser = (user: { id: string; email?: string | null; email_confirmed_at?: string | null; app_metadata?: { provider?: string }; user_metadata?: Record<string, unknown> } | null) => {
-      setAuthUser(user ? { id: user.id, email: user.email, email_confirmed_at: user.email_confirmed_at, provider: user.app_metadata?.provider, display_name: getAuthDisplayName(user) } : null)
+      setAuthUser(user ? { id: user.id, email: user.email, email_confirmed_at: user.email_confirmed_at, provider: user.app_metadata?.provider, display_name: getAuthDisplayName(user), avatar_url: getAuthAvatarUrl(user) } : null)
       setReviewerName(user ? getAuthDisplayName(user) : '')
     }
     void supabase.auth.getUser().then(({ data }) => syncPublicUser(data.user))
@@ -654,7 +678,7 @@ export default function TourismHome() {
   const fetchRatingSummaries = async (establishmentIds: string[], visitorToken = ratingVisitorToken) => {
     if (establishmentIds.length === 0) return
 
-    const cacheKey = `public:rating-summaries:${[...establishmentIds].sort().join(',')}`
+    const cacheKey = `public:rating-summaries:v2:${[...establishmentIds].sort().join(',')}`
     const cached = getPublicCache<PublicRatingSummaryRow[]>(cacheKey)
     const result = cached
       ? { data: cached, error: null }
@@ -665,10 +689,18 @@ export default function TourismHome() {
 
     if (!result.error && result.data) {
       if (!cached) setPublicCache(cacheKey, result.data, PUBLIC_RATING_SUMMARY_CACHE_TTL)
-      setRatingSummaries((current) => ({
-        ...current,
-        ...summarizeRatings(result.data),
-      }))
+      const summaries = summarizeRatings(result.data)
+      const missingIds = establishmentIds.filter((id) => !summaries[id] || summaries[id].count === 0)
+      if (missingIds.length > 0) {
+        const reviewResult = await supabase
+          .from('establishment_rating_reviews')
+          .select('establishment_id, rating, comment')
+          .in('establishment_id', missingIds)
+        if (!reviewResult.error && reviewResult.data?.length) {
+          Object.assign(summaries, summarizeReviewRows(reviewResult.data))
+        }
+      }
+      setRatingSummaries((current) => ({ ...current, ...summaries }))
     }
   }
 
@@ -681,7 +713,7 @@ export default function TourismHome() {
     if (!cached) {
       const result = await supabase
         .from('establishment_rating_reviews')
-        .select('id, establishment_id, rating, comment, reviewer_name, photo_path, created_at')
+        .select('id, establishment_id, rating, comment, reviewer_name, photo_path, reviewer_avatar_url, created_at')
         .eq('establishment_id', establishmentId)
         .order('created_at', { ascending: false })
         .limit(50)
@@ -756,6 +788,12 @@ export default function TourismHome() {
       }
     }
 
+    await supabase.from('public_user_profiles').upsert({
+      id: authUser.id,
+      display_name: name,
+      avatar_url: authUser.avatar_url || null,
+    }, { onConflict: 'id' })
+
     const { error } = await supabase.rpc('submit_establishment_rating', {
       p_establishment_id: selectedEstablishment.id,
       p_visitor_token: visitorToken,
@@ -773,7 +811,7 @@ export default function TourismHome() {
       setReviewPhoto(null)
       setReviewPhotoPreview('')
       invalidatePublicCache(`public:rating-reviews:${selectedEstablishment.id}`)
-      invalidatePublicCache(`public:rating-summaries:${[...establishments.map((est) => est.id)].sort().join(',')}`)
+      invalidatePublicCache(`public:rating-summaries:v2:${[...establishments.map((est) => est.id)].sort().join(',')}`)
       await fetchRatingSummaries(establishments.map((est) => est.id), visitorToken)
       await fetchRatingReviews(selectedEstablishment.id)
     }
@@ -2039,11 +2077,20 @@ function ReviewSummary({ summary, reviews, onReport }: { summary: RatingSummary;
             const display = getReviewDisplay(review)
             return (
               <div key={`${review.establishment_id}-${review.created_at}-${index}`} className="rounded-2xl bg-[#F5F8FF] p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <RatingDisplay summary={{ average: review.rating, count: 1, breakdown: { ...emptyBreakdown, [review.rating]: 1 }, commentCount: display.comment ? 1 : 0 }} />
-                  <span className="text-xs text-slate-400">{new Date(review.created_at).toLocaleDateString()}</span>
+                <div className="flex items-start gap-3">
+                  {review.reviewer_avatar_url ? (
+                    <img src={review.reviewer_avatar_url} alt={`${display.reviewerName} profile`} className="h-10 w-10 shrink-0 rounded-full object-cover" loading="lazy" />
+                  ) : (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#193364] text-sm font-bold text-white" aria-hidden="true">{display.reviewerName.charAt(0).toUpperCase()}</div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="truncate text-sm font-semibold text-slate-800">{display.reviewerName}</p>
+                      <span className="shrink-0 text-xs text-slate-400">{new Date(review.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <RatingDisplay summary={{ average: review.rating, count: 1, breakdown: { ...emptyBreakdown, [review.rating]: 1 }, commentCount: display.comment ? 1 : 0 }} className="mt-1" />
+                  </div>
                 </div>
-                <p className="mt-2 text-sm font-semibold text-slate-800">{display.reviewerName}</p>
                 {review.photo_path && (
                   <button
                     type="button"
