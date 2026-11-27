@@ -20,6 +20,9 @@ import {
   X,
   ImagePlus,
   Flag,
+  LogIn,
+  LogOut,
+  UserRound,
 } from 'lucide-react'
 import React from 'react'
 import { Button } from '../../components/ui/button'
@@ -30,6 +33,7 @@ import { Separator } from '../../components/ui/separator'
 import { supabase } from '../../../lib/supabase'
 import { hasPreferencesConsent } from '../../../lib/consent'
 import { getPublicCache, invalidatePublicCache, setPublicCache } from '../../../lib/publicCache'
+import { sortPublicEstablishments } from '../../../lib/directorySort'
 
 interface Establishment {
   id: string
@@ -67,12 +71,15 @@ interface RatingSummary {
   count: number
   breakdown: RatingBreakdown
   commentCount: number
+  positivePercentage?: number | null
+  satisfactionScore?: number | null
+  eligibility?: string
   visitorRating?: number
 }
 
 type PublicRatingSummaryRow = {
   establishment_id: string
-  average_rating: number
+  average_rating: number | null
   rating_count: number
   one_star_count?: number
   two_star_count?: number
@@ -80,6 +87,9 @@ type PublicRatingSummaryRow = {
   four_star_count?: number
   five_star_count?: number
   comment_count?: number
+  positive_rating_percentage?: number | null
+  customer_satisfaction_score?: number | null
+  feedback_eligibility?: string
 }
 
 interface RatingReview {
@@ -366,12 +376,12 @@ const sortReviewsForDisplay = (reviews: RatingReview[]) => {
   })
 }
 
-const summarizeRatings = (ratings: Array<{ establishment_id: string; average_rating: number; rating_count: number; one_star_count?: number; two_star_count?: number; three_star_count?: number; four_star_count?: number; five_star_count?: number; comment_count?: number }>) => {
+const summarizeRatings = (ratings: Array<{ establishment_id: string; average_rating: number | null; rating_count: number; one_star_count?: number; two_star_count?: number; three_star_count?: number; four_star_count?: number; five_star_count?: number; comment_count?: number; positive_rating_percentage?: number | null; customer_satisfaction_score?: number | null; feedback_eligibility?: string }>) => {
   return ratings.reduce<Record<string, RatingSummary>>((acc, item) => {
-    if (!item.establishment_id || typeof item.average_rating !== 'number') return acc
+    if (!item.establishment_id) return acc
 
     acc[item.establishment_id] = {
-      average: item.average_rating,
+      average: typeof item.average_rating === 'number' ? item.average_rating : 0,
       count: item.rating_count || 0,
       breakdown: {
         1: item.one_star_count || 0,
@@ -381,6 +391,9 @@ const summarizeRatings = (ratings: Array<{ establishment_id: string; average_rat
         5: item.five_star_count || 0,
       },
       commentCount: item.comment_count || 0,
+      positivePercentage: item.positive_rating_percentage,
+      satisfactionScore: item.customer_satisfaction_score,
+      eligibility: item.feedback_eligibility,
     }
     return acc
   }, {})
@@ -436,13 +449,14 @@ export default function TourismHome() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedType, setSelectedType] = useState('all')
+  const [directorySort, setDirectorySort] = useState<'recommended' | 'rating' | 'reviews' | 'name'>('recommended')
   const [selectedEstablishment, setSelectedEstablishment] = useState<Establishment | null>(null)
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0)
   const [behavior, setBehavior] = useState<BehaviorProfile>(emptyBehavior)
   const [preferenceEditorOpen, setPreferenceEditorOpen] = useState(false)
   const [ratingSummaries, setRatingSummaries] = useState<Record<string, RatingSummary>>({})
   const [ratingVisitorToken, setRatingVisitorToken] = useState('')
-  const [authUser, setAuthUser] = useState<{ id: string; email?: string; email_confirmed_at?: string | null } | null>(null)
+  const [authUser, setAuthUser] = useState<{ id: string; email?: string; email_confirmed_at?: string | null; provider?: string } | null>(null)
   const [authEmail, setAuthEmail] = useState('')
   const [authPassword, setAuthPassword] = useState('')
   const [authMessage, setAuthMessage] = useState('')
@@ -574,10 +588,10 @@ export default function TourismHome() {
     const visitorToken = getRatingVisitorToken()
     setRatingVisitorToken(visitorToken)
     fetchEstablishments(visitorToken)
-    void supabase.auth.getUser().then(({ data }) => setAuthUser(data.user ? { id: data.user.id, email: data.user.email, email_confirmed_at: data.user.email_confirmed_at } : null))
+    void supabase.auth.getUser().then(({ data }) => setAuthUser(data.user ? { id: data.user.id, email: data.user.email, email_confirmed_at: data.user.email_confirmed_at, provider: data.user.app_metadata?.provider } : null))
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       const user = session?.user
-      setAuthUser(user ? { id: user.id, email: user.email, email_confirmed_at: user.email_confirmed_at } : null)
+      setAuthUser(user ? { id: user.id, email: user.email, email_confirmed_at: user.email_confirmed_at, provider: user.app_metadata?.provider } : null)
     })
     return () => authListener.subscription.unsubscribe()
   }, [])
@@ -593,6 +607,29 @@ export default function TourismHome() {
     const { error } = await supabase.auth.signUp({ email: authEmail.trim(), password: authPassword, options: { emailRedirectTo: window.location.origin } })
     setAuthMessage(error ? error.message : 'Account created. Check your email, verify it, then sign in to submit a rating.')
   }
+
+  const signInWithGoogle = async () => {
+    setAuthMessage('')
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/account` } })
+    if (error) setAuthMessage(error.message)
+  }
+
+  const sendPasswordRecovery = async () => {
+    setAuthMessage('')
+    if (!authEmail.trim()) {
+      setAuthMessage('Enter your email address first.')
+      return
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(authEmail.trim(), { redirectTo: `${window.location.origin}/account` })
+    setAuthMessage(error ? error.message : 'If an account exists for that email, a password-recovery message was sent.')
+  }
+
+  const signOutPublicUser = async () => {
+    await supabase.auth.signOut()
+    setAuthMessage('You are signed out.')
+  }
+
+  const verifiedPublicAccount = Boolean(authUser?.email_confirmed_at)
 
   const fetchEstablishments = async (visitorToken = ratingVisitorToken) => {
     setLoading(true)
@@ -624,7 +661,7 @@ export default function TourismHome() {
       ? { data: cached, error: null }
       : await supabase
         .from('establishment_rating_summaries')
-        .select('establishment_id, average_rating, rating_count, one_star_count, two_star_count, three_star_count, four_star_count, five_star_count, comment_count')
+        .select('establishment_id, average_rating, rating_count, one_star_count, two_star_count, three_star_count, four_star_count, five_star_count, comment_count, positive_rating_percentage, customer_satisfaction_score, feedback_eligibility')
         .in('establishment_id', establishmentIds)
 
     if (!result.error && result.data) {
@@ -673,8 +710,8 @@ export default function TourismHome() {
 
   const submitRating = async () => {
     if (!selectedEstablishment || submittingRating || selectedReviewRating < 1) return
-    if (!authUser?.email_confirmed_at) {
-      setRatingMessage('Please create or sign in to a verified email account before submitting a rating.')
+    if (!verifiedPublicAccount) {
+      setRatingMessage('To provide a rating or review, please create an account or sign in using Google or email. Only verified accounts can submit feedback to help maintain the reliability and accountability of establishment ratings.')
       return
     }
     const visitorToken = ratingVisitorToken || getRatingVisitorToken()
@@ -700,7 +737,7 @@ export default function TourismHome() {
     let photoPath: string | null = null
     if (reviewPhoto) {
       const extension = reviewPhoto.name.split('.').pop()?.toLowerCase() || 'jpg'
-      photoPath = `${selectedEstablishment.id}/${crypto.randomUUID()}.${extension}`
+      photoPath = `${selectedEstablishment.id}/${authUser?.id}/${crypto.randomUUID()}.${extension}`
       const { error: uploadError } = await supabase.storage.from('review-photos').upload(photoPath, reviewPhoto, {
         cacheControl: '3600',
         contentType: reviewPhoto.type,
@@ -715,7 +752,6 @@ export default function TourismHome() {
 
     const { error } = await supabase.rpc('submit_establishment_rating', {
       p_establishment_id: selectedEstablishment.id,
-      p_visitor_token: visitorToken,
       p_rating: selectedReviewRating,
       p_comment: comment || null,
       p_reviewer_name: name,
@@ -789,8 +825,9 @@ export default function TourismHome() {
     if (selectedType !== 'all') {
       results = results.filter((e) => getPublicCategory(e.type) === selectedType)
     }
+    results = sortPublicEstablishments(results, ratingSummaries, directorySort)
     setFiltered(results)
-  }, [searchTerm, selectedType, establishments])
+  }, [searchTerm, selectedType, establishments, directorySort, ratingSummaries])
 
 
   useEffect(() => {
@@ -1337,6 +1374,15 @@ export default function TourismHome() {
                 )
               })}
             </div>
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
+              <span className="sr-only">Sort establishments</span>
+              <select value={directorySort} onChange={(event) => setDirectorySort(event.target.value as typeof directorySort)} className="rounded-xl border border-[#AFB3B5] bg-[#E5E8E1] px-3 py-2 text-sm font-semibold text-[#193364] outline-none focus:ring-2 focus:ring-[#193364]">
+                <option value="recommended">Recommended order</option>
+                <option value="rating">Highest rating</option>
+                <option value="reviews">Most reviewed</option>
+                <option value="name">Name A–Z</option>
+              </select>
+            </label>
             <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
               <Filter className="h-4 w-4" strokeWidth={1.8} />
               Showing {filtered.length} resorts and hotels
@@ -1781,18 +1827,19 @@ export default function TourismHome() {
                   </div>
                 </div>
                 <div className="mt-4 space-y-3">
-                  {!authUser?.email_confirmed_at && (
+                  {!verifiedPublicAccount && (
                     <div className="rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-3">
-                      <p className="text-xs leading-5 text-slate-600">Sign in or create an account, then verify the email address sent by Supabase before submitting.</p>
+                      <p className="text-xs leading-5 text-slate-600">To provide a rating or review, please create an account or sign in using Google or email. Only verified accounts can submit feedback to help maintain the reliability and accountability of establishment ratings.</p>
+                      <Button type="button" onClick={() => void signInWithGoogle()} variant="outline" className="mt-2 w-full rounded-xl text-xs"><LogIn className="h-4 w-4" /> Continue with Google</Button>
                       <div className="mt-2 grid gap-2 sm:grid-cols-2">
                         <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} type="email" placeholder="Email address" className="rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] p-2.5 text-sm" />
                         <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} type="password" placeholder="Password (6+ characters)" className="rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] p-2.5 text-sm" />
                       </div>
-                      <div className="mt-2 flex flex-wrap gap-2"><Button type="button" onClick={() => void signInForRating()} variant="outline" className="rounded-xl text-xs">Sign in</Button><Button type="button" onClick={() => void signUpForRating()} variant="outline" className="rounded-xl text-xs">Create account</Button></div>
+                      <div className="mt-2 flex flex-wrap gap-2"><Button type="button" onClick={() => void signInForRating()} variant="outline" className="rounded-xl text-xs">Sign in</Button><Button type="button" onClick={() => void signUpForRating()} variant="outline" className="rounded-xl text-xs">Create account</Button><Button type="button" onClick={() => void sendPasswordRecovery()} variant="ghost" className="rounded-xl text-xs">Forgot password?</Button></div>
                       {authMessage && <p className="mt-2 text-xs text-slate-600">{authMessage}</p>}
                     </div>
                   )}
-                  {authUser?.email_confirmed_at && <p className="text-xs font-medium text-emerald-700">Verified account: {authUser.email}</p>}
+                  {verifiedPublicAccount && <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-medium text-emerald-700">Verified account: {authUser?.email}</p><Button type="button" onClick={() => void signOutPublicUser()} variant="ghost" className="rounded-xl text-xs text-slate-600"><LogOut className="h-4 w-4" /> Sign out</Button></div>}
                   <input
                     type="text"
                     value={reviewerName}
@@ -1891,6 +1938,7 @@ export default function TourismHome() {
             <p className="mt-2 leading-6">Tourism discovery and establishment information for Balayan.</p>
           </div>
           <nav aria-label="Footer links" className="flex flex-wrap gap-x-5 gap-y-3 sm:justify-end">
+            <a href="/account" className="inline-flex items-center gap-1.5 underline underline-offset-2 hover:text-[#193364]"><UserRound className="h-3.5 w-3.5" /> Account</a>
             <a href="/privacy-policy" className="underline underline-offset-2 hover:text-[#193364]">Privacy Policy</a>
             <a href="/terms-and-conditions" className="underline underline-offset-2 hover:text-[#193364]">Terms and Conditions</a>
             <a href="/cookie-policy" className="underline underline-offset-2 hover:text-[#193364]">Cookie Policy</a>
@@ -1929,7 +1977,8 @@ function ReviewSummary({ summary, reviews, onReport }: { summary: RatingSummary;
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="text-lg font-semibold leading-6 text-slate-950 sm:text-base">Reviews & ratings</h3>
-          <p className="mt-1 text-sm leading-5 text-slate-600">{summary.count} total review{summary.count === 1 ? '' : 's'} · {summary.commentCount} with comment{summary.commentCount === 1 ? '' : 's'}</p>
+          <p className="mt-1 text-sm leading-5 text-slate-600">{summary.count === 0 ? 'No ratings yet.' : `${summary.count} published rating${summary.count === 1 ? '' : 's'} · ${summary.commentCount} with comment${summary.commentCount === 1 ? '' : 's'}`}</p>
+          {summary.count > 0 && summary.positivePercentage != null && <p className="mt-1 text-xs text-slate-500">{summary.positivePercentage.toFixed(1)}% positive ratings{summary.satisfactionScore != null ? ` · Satisfaction score ${summary.satisfactionScore.toFixed(1)}/100` : ''}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {selectedRating > 0 && (
@@ -2043,6 +2092,7 @@ function ReviewSummary({ summary, reviews, onReport }: { summary: RatingSummary;
 
 function RatingDisplay({ summary, className = '' }: { summary?: RatingSummary; className?: string }) {
   const rating = summary || emptyRatingSummary
+  if (rating.count === 0) return <span className={`text-sm font-medium text-slate-500 ${className}`}>No ratings yet</span>
   const rounded = Math.round(rating.average)
 
   return (
@@ -2052,7 +2102,7 @@ function RatingDisplay({ summary, className = '' }: { summary?: RatingSummary; c
           <Star key={star} className={`h-4 w-4 ${star <= rounded ? 'fill-[#193364]' : 'fill-slate-100'}`} strokeWidth={1.8} />
         ))}
       </div>
-      <span>{rating.count > 0 ? `${rating.average.toFixed(1)} (${rating.count})` : '(0)'}</span>
+      <span>{rating.average.toFixed(1)} ({rating.count})</span>
     </div>
   )
 }

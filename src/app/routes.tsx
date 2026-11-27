@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import TourismHome from "./pages/public/TourismHome";
+import PublicAccount from "./pages/public/PublicAccount";
 import LegalPage from "./pages/LegalPages";
 
 export const router = createBrowserRouter([
@@ -10,6 +11,10 @@ export const router = createBrowserRouter([
   {
     path: "/explore",
     Component: TourismHome,
+  },
+  {
+    path: "/account",
+    Component: PublicAccount,
   },
   {
     path: "/privacy-policy",
