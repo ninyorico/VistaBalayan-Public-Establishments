@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { ArrowLeft, Camera, LogIn, LogOut, Trash2, UserRound, X } from 'lucide-react'
+import { ArrowLeft, Camera, LogOut, Trash2, UserRound, X } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { Button } from '../../components/ui/button'
+import GoogleSignInButton from '../../components/GoogleSignInButton'
 
 interface PublicReview {
   id: string
@@ -89,10 +90,6 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
     setMessage(error ? error.message : 'Account created. Check your email to verify the account.')
   }
 
-  const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/account` } })
-    if (error) setMessage(error.message)
-  }
 
   const recoverPassword = async () => {
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/account` })
@@ -170,7 +167,7 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
           {!user ? (
             <div className="mt-6 space-y-3">
               <p className="text-sm leading-6 text-slate-600">Browse the public site without an account. Sign in or create an account to submit and manage verified ratings and reviews.</p>
-              <Button type="button" onClick={() => void signInWithGoogle()} className="w-full rounded-2xl bg-[#193364] text-white"><LogIn className="h-4 w-4" /> Continue with Google</Button>
+              <GoogleSignInButton onError={setMessage} />
               <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="Email address" className="w-full rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3 text-sm" />
               <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="Password" className="w-full rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3 text-sm" />
               <div className="flex flex-wrap gap-2"><Button type="button" onClick={() => void signIn()} variant="outline" className="rounded-xl">Sign in</Button><Button type="button" onClick={() => void signUp()} variant="outline" className="rounded-xl">Create account</Button><Button type="button" onClick={() => void recoverPassword()} variant="ghost" className="rounded-xl">Forgot password?</Button></div>

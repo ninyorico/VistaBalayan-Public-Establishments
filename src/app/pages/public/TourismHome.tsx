@@ -20,7 +20,6 @@ import {
   X,
   ImagePlus,
   Flag,
-  LogIn,
   LogOut,
   UserRound,
 } from 'lucide-react'
@@ -35,6 +34,7 @@ import { hasPreferencesConsent } from '../../../lib/consent'
 import { getPublicCache, invalidatePublicCache, setPublicCache } from '../../../lib/publicCache'
 import { sortPublicEstablishments } from '../../../lib/directorySort'
 import PublicAccount from './PublicAccount'
+import GoogleSignInButton from '../../components/GoogleSignInButton'
 
 interface Establishment {
   id: string
@@ -625,11 +625,6 @@ export default function TourismHome() {
     setAuthMessage(error ? error.message : 'Account created. Check your email, verify it, then sign in to submit a rating.')
   }
 
-  const signInWithGoogle = async () => {
-    setAuthMessage('')
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/account` } })
-    if (error) setAuthMessage(error.message)
-  }
 
   const sendPasswordRecovery = async () => {
     setAuthMessage('')
@@ -1844,7 +1839,7 @@ export default function TourismHome() {
                   {!verifiedPublicAccount && (
                     <div className="rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-3">
                       <p className="text-xs leading-5 text-slate-600">To provide a rating or review, please create an account or sign in using Google or email. Only verified accounts can submit feedback to help maintain the reliability and accountability of establishment ratings.</p>
-                      <Button type="button" onClick={() => void signInWithGoogle()} variant="outline" className="mt-2 w-full rounded-xl text-xs"><LogIn className="h-4 w-4" /> Continue with Google</Button>
+                      <GoogleSignInButton onError={setAuthMessage} className="mt-2" />
                       <div className="mt-2 grid gap-2 sm:grid-cols-2">
                         <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} type="email" placeholder="Email address" className="rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] p-2.5 text-sm" />
                         <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} type="password" placeholder="Password (6+ characters)" className="rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] p-2.5 text-sm" />
