@@ -121,22 +121,14 @@ interface UserLocation {
   longitude: number
 }
 
-interface RecommendationPreferences {
-  categories: string[]
-  maxDistanceKm: number | null
-  minimumRating: number | null
-}
-
 interface BehaviorProfile {
   viewedIds: string[]
   categoryClicks: Record<string, number>
   searches: string[]
   searchCounts: Record<string, number>
-  preferences: RecommendationPreferences
 }
 
 const BEHAVIOR_KEY = 'vistabalayan_public_behavior_v1'
-const RECOMMENDATION_PREFERENCES_KEY = 'vistabalayan_public_recommendation_preferences_v1'
 const RATING_VISITOR_KEY = 'vistabalayan_public_rating_visitor_v1'
 const LEGACY_LOCAL_RATINGS_KEY = 'vistabalayan_public_local_ratings_v1'
 const LEGACY_REVIEW_PREFIX = 'Reviewed by '
@@ -170,7 +162,6 @@ const emptyBehavior: BehaviorProfile = {
   categoryClicks: {},
   searches: [],
   searchCounts: {},
-  preferences: { categories: [], maxDistanceKm: null, minimumRating: null },
 }
 
 const getPublicCategory = (type = '', dotClassification: string | null = '') => {
@@ -284,19 +275,10 @@ const readBehavior = (): BehaviorProfile => {
   if (!hasPreferencesConsent()) return emptyBehavior
   try {
     const stored = window.localStorage.getItem(BEHAVIOR_KEY)
-    const savedPreferences = window.localStorage.getItem(RECOMMENDATION_PREFERENCES_KEY)
     const parsed = stored ? JSON.parse(stored) : {}
-    const preferences = savedPreferences ? JSON.parse(savedPreferences) : parsed.preferences
     return {
       ...emptyBehavior,
       ...parsed,
-      preferences: {
-        ...emptyBehavior.preferences,
-        ...(preferences || {}),
-        categories: Array.isArray(preferences?.categories) ? preferences.categories : [],
-        maxDistanceKm: typeof preferences?.maxDistanceKm === 'number' ? preferences.maxDistanceKm : null,
-        minimumRating: typeof preferences?.minimumRating === 'number' ? preferences.minimumRating : null,
-      },
       categoryClicks: { ...emptyBehavior.categoryClicks, ...(parsed.categoryClicks || {}) },
       searchCounts: { ...emptyBehavior.searchCounts, ...(parsed.searchCounts || {}) },
     }
@@ -308,7 +290,6 @@ const readBehavior = (): BehaviorProfile => {
 const saveBehavior = (behavior: BehaviorProfile) => {
   if (typeof window === 'undefined' || !hasPreferencesConsent()) return
   window.localStorage.setItem(BEHAVIOR_KEY, JSON.stringify(behavior))
-  window.localStorage.setItem(RECOMMENDATION_PREFERENCES_KEY, JSON.stringify(behavior.preferences))
 }
 
 const getRatingVisitorToken = () => {
@@ -484,7 +465,6 @@ export default function TourismHome() {
   const [selectedEstablishment, setSelectedEstablishment] = useState<Establishment | null>(null)
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0)
   const [behavior, setBehavior] = useState<BehaviorProfile>(emptyBehavior)
-  const [preferenceEditorOpen, setPreferenceEditorOpen] = useState(false)
   const [ratingSummaries, setRatingSummaries] = useState<Record<string, RatingSummary>>({})
   const [ratingVisitorToken, setRatingVisitorToken] = useState('')
   const [authUser, setAuthUser] = useState<{ id: string; email?: string | null; email_confirmed_at?: string | null; provider?: string; display_name?: string; avatar_url?: string } | null>(null)
@@ -1135,15 +1115,7 @@ export default function TourismHome() {
         const searchBoost = searchMatches.reduce((boost, [, count]) => boost + Math.min(count * 4, 20), 0)
         const featuredBoost = est.featured ? 8 : 0
         const distanceScore = distance === null ? 0 : Math.max(0, 100 - distance * 18)
-        const averageRating = ratingSummaries[est.id]?.average || 0
-        const ratingPreferenceMatch = behavior.preferences.minimumRating === null || averageRating >= behavior.preferences.minimumRating
-        if (!ratingPreferenceMatch) return null
-        const preferenceCategoryMatch = behavior.preferences.categories.includes(publicCategory)
-        const preferenceDistanceMatch = behavior.preferences.maxDistanceKm === null || (distance !== null && distance <= behavior.preferences.maxDistanceKm)
-        if (behavior.preferences.categories.length > 0 && !preferenceCategoryMatch) return null
-        if (!preferenceDistanceMatch) return null
-        const preferenceBoost = preferenceCategoryMatch ? 24 : 0
-        const score = distanceScore + categoryBoost * 7 + (viewedCategoryMatch ? 4 : 0) + searchBoost + featuredBoost + preferenceBoost
+        const score = distanceScore + categoryBoost * 7 + (viewedCategoryMatch ? 4 : 0) + searchBoost + featuredBoost
         const signals = [
           ...(distance !== null ? [{ key: 'distance', text: `About ${distance.toFixed(1)} km by road from your location.`, weight: distanceScore }] : []),
           ...(searchMatches.length > 0 ? [{ key: 'search', text: `Matches your search for "${searchMatches[0][0]}".`, weight: searchBoost }] : []),
@@ -1211,14 +1183,12 @@ export default function TourismHome() {
   const recommendationEmptyMessage = recommendations.length > 0
     ? ''
     : !userLocation
-      ? 'Enable location to match recommendations to your road distance preference.'
+      ? 'Enable location to personalize recommendations by road distance.'
       : routeStatus === 'loading'
         ? 'Calculating road distances for available establishments…'
         : routeStatus === 'error'
-          ? 'Road distance is temporarily unavailable. Try again or choose any road distance.'
-          : behavior.preferences.maxDistanceKm !== null
-            ? `No ${behavior.preferences.categories.length === 1 ? behavior.preferences.categories[0].toLowerCase() : 'establishment'} is available within ${behavior.preferences.maxDistanceKm} km by road from your location.`
-            : 'No establishment matches your current recommendation preferences.'
+          ? 'Road distance is temporarily unavailable. Try again later.'
+          : 'No establishment matches your activity and location signals.'
 
   const selectedRating = selectedEstablishment ? ratingSummaries[selectedEstablishment.id] || emptyRatingSummary : emptyRatingSummary
   const selectedReviews = selectedEstablishment ? ratingReviews[selectedEstablishment.id] || [] : []
@@ -1295,35 +1265,6 @@ export default function TourismHome() {
                   className="h-14 rounded-[1.25rem] border border-[#AFB3B5] bg-[#E0E5EC] pl-12 pr-4 text-base text-[#193364] shadow-[inset_3px_3px_6px_rgba(163,177,198,0.30),inset_-3px_-3px_6px_rgba(255,255,255,0.55)] placeholder:text-[#6C7895] focus-visible:border-[#193364]/45 focus-visible:ring-2 focus-visible:ring-[#193364]/20"
                 />
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Button type="button" variant="outline" onClick={() => setPreferenceEditorOpen((current) => !current)} className="rounded-2xl border-[#AFB3B5] bg-[#F5F8FF] text-xs font-semibold text-[#193364] shadow-none">
-                  <Sparkles className="h-4 w-4" />
-                  {behavior.preferences.categories.length > 0 || behavior.preferences.maxDistanceKm !== null || behavior.preferences.minimumRating !== null ? 'Edit recommendation preferences' : 'Set recommendation preferences'}
-                </Button>
-                <span className="text-xs text-slate-500">Used with your searches, viewed listings, and proximity.</span>
-              </div>
-              {preferenceEditorOpen && (
-                <div className="mt-3 rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-4 text-sm">
-                  <p className="font-semibold text-[#193364]">What would you prefer?</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {['Resort', 'Hotel'].map((category) => {
-                      const selected = behavior.preferences.categories.includes(category)
-                      return <button key={category} type="button" onClick={() => { const categories = selected ? behavior.preferences.categories.filter((item) => item !== category) : [...behavior.preferences.categories, category]; const next = { ...behavior, preferences: { ...behavior.preferences, categories } }; setBehavior(next); saveBehavior(next) }} className={`rounded-full px-3 py-2 text-xs font-semibold ${selected ? 'bg-[#193364] text-white' : 'bg-[#F5F8FF] text-[#193364]'}`}>{category}s</button>
-                    })}
-                  </div>
-                  <label className="mt-3 block text-xs font-semibold text-[#193364]">Maximum road distance
-                    <select value={behavior.preferences.maxDistanceKm ?? ''} onChange={(event) => { const value = event.target.value ? Number(event.target.value) : null; const next = { ...behavior, preferences: { ...behavior.preferences, maxDistanceKm: value } }; setBehavior(next); saveBehavior(next) }} className="mt-1 w-full rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] px-3 py-2 text-sm font-normal">
-                      <option value="">Any distance</option><option value="5">Within 5 km</option><option value="10">Within 10 km</option><option value="25">Within 25 km</option>
-                    </select>
-                  </label>
-                  <label className="mt-3 block text-xs font-semibold text-[#193364]">Minimum rating
-                    <select value={behavior.preferences.minimumRating ?? ''} onChange={(event) => { const value = event.target.value ? Number(event.target.value) : null; const next = { ...behavior, preferences: { ...behavior.preferences, minimumRating: value } }; setBehavior(next); saveBehavior(next) }} className="mt-1 w-full rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] px-3 py-2 text-sm font-normal">
-                      <option value="">Any rating</option><option value="3">3.0 stars or higher</option><option value="4">4.0 stars or higher</option><option value="4.5">4.5 stars or higher</option>
-                    </select>
-                  </label>
-                  <p className="mt-2 text-xs text-slate-500">These choices are stored locally only after preferences consent and can be changed or cleared at any time.</p>
-                </div>
-              )}
               <div className="mt-1 grid grid-cols-2 gap-2 lg:hidden">
                 <Button
                   type="button"
