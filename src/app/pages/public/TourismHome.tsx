@@ -1198,6 +1198,15 @@ export default function TourismHome() {
 
   return (
     <main className="min-h-[100dvh] bg-[#E0E5EC] text-[#193364]">
+      <nav className="relative z-30 border-b border-[#AFB3B5] bg-[#E0E5EC]/95 px-5 py-3 backdrop-blur sm:px-6 lg:px-10" aria-label="Main navigation">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4">
+          <a href="/" className="text-sm font-bold tracking-[-0.02em] text-[#193364] sm:text-base">VistaBalayan Tourism</a>
+          <a href="/account" aria-label="Open account management" className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] px-3 text-sm font-semibold text-[#193364] shadow-[3px_3px_7px_rgba(163,177,198,0.35),-3px_-3px_7px_rgba(255,255,255,0.55)] transition hover:bg-[#E5E8E1] active:translate-y-[1px]">
+            <UserRound className="h-5 w-5" strokeWidth={1.8} />
+            <span className="hidden sm:inline">Account</span>
+          </a>
+        </div>
+      </nav>
       <section className="relative overflow-hidden border-b border-[#AFB3B5] bg-[#E0E5EC] text-[#193364]">
         <img
           src="/balayan-church-hero.jpg"
