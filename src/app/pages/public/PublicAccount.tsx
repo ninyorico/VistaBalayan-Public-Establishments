@@ -141,17 +141,30 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
     if (!error) await loadAccount()
   }
 
-  if (loading) return <main className={`${embedded ? 'p-8' : 'min-h-screen p-8'} bg-[#E0E5EC] text-[#193364]`}>Loading account…</main>
+  if (loading) return (
+    <main className={`${embedded ? 'relative bg-[#E0E5EC] p-5 sm:p-6' : 'min-h-screen bg-[#E0E5EC] px-4 py-8 text-[#193364] sm:px-8'}`} aria-busy="true" aria-label="Loading account">
+      <div className="mx-auto max-w-3xl space-y-5 animate-pulse">
+        {embedded && <div className="absolute right-4 top-4 h-8 w-8 rounded-xl bg-[#cbd3df]" />}
+        <section className="rounded-[2rem] bg-[#E0E5EC] p-5 shadow-[10px_10px_22px_rgba(163,177,198,.55),-10px_-10px_22px_rgba(255,255,255,.72)] sm:p-6">
+          <div className="flex items-start gap-3">
+            <div className="h-6 w-6 rounded-full bg-[#cbd3df]" />
+            <div className="flex-1 space-y-2"><div className="h-3 w-24 rounded bg-[#cbd3df]" /><div className="h-7 w-56 max-w-full rounded bg-[#cbd3df]" /></div>
+          </div>
+          <div className="mt-6 space-y-3"><div className="h-4 w-full rounded bg-[#cbd3df]" /><div className="h-4 w-4/5 rounded bg-[#cbd3df]" /><div className="h-10 w-full rounded-2xl bg-[#cbd3df]" /><div className="h-10 w-full rounded-2xl bg-[#cbd3df]" /><div className="h-10 w-full rounded-2xl bg-[#cbd3df]" /></div>
+        </section>
+      </div>
+    </main>
+  )
 
   return (
-    <main className={`${embedded ? 'bg-[#E0E5EC]' : 'min-h-screen bg-[#E0E5EC] px-4 py-8 text-[#193364] sm:px-8'}`}>
-      <div className="mx-auto max-w-3xl space-y-6">
+    <main className={`${embedded ? 'relative bg-[#E0E5EC]' : 'min-h-screen bg-[#E0E5EC] px-4 py-8 text-[#193364] sm:px-8'}`}>
+      <div className="mx-auto max-w-3xl space-y-5">
         {embedded ? (
-          <div className="flex justify-end"><Button type="button" onClick={onClose} variant="ghost" className="rounded-xl" aria-label="Close account"><X className="h-5 w-5" /></Button></div>
+          <div className="absolute right-3 top-3 z-10"><Button type="button" onClick={onClose} variant="ghost" className="rounded-xl" aria-label="Close account"><X className="h-5 w-5" /></Button></div>
         ) : (
           <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold underline underline-offset-4"><ArrowLeft className="h-4 w-4" /> Back to tourism listings</Link>
         )}
-        <section className="rounded-[2rem] bg-[#E0E5EC] p-6 shadow-[10px_10px_22px_rgba(163,177,198,.55),-10px_-10px_22px_rgba(255,255,255,.72)]">
+        <section className="rounded-[2rem] bg-[#E0E5EC] p-5 shadow-[10px_10px_22px_rgba(163,177,198,.55),-10px_-10px_22px_rgba(255,255,255,.72)] sm:p-6">
           <div className="flex items-start gap-3"><UserRound className="mt-1 h-6 w-6" /><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Public account</p><h1 className="mt-1 text-2xl font-semibold">Manage your feedback</h1></div></div>
           {!user ? (
             <div className="mt-6 space-y-3">

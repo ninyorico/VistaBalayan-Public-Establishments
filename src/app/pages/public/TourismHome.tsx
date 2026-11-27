@@ -735,6 +735,11 @@ export default function TourismHome() {
 
     let photoPath: string | null = null
     if (reviewPhoto) {
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(reviewPhoto.type) || reviewPhoto.size > 5 * 1024 * 1024) {
+        setRatingMessage('Choose a JPG, PNG, or WebP photo up to 5 MB.')
+        setSubmittingRating(false)
+        return
+      }
       const extension = reviewPhoto.name.split('.').pop()?.toLowerCase() || 'jpg'
       photoPath = `${selectedEstablishment.id}/${crypto.randomUUID()}.${extension}`
       const { error: uploadError } = await supabase.storage.from('review-photos').upload(photoPath, reviewPhoto, {
@@ -743,7 +748,9 @@ export default function TourismHome() {
         upsert: false,
       })
       if (uploadError) {
-        setRatingMessage(`Photo upload failed: ${uploadError.message}`)
+        setRatingMessage(uploadError.message.toLowerCase().includes('bucket not found')
+          ? 'Photo upload is temporarily unavailable. The review photo storage is not enabled yet.'
+          : `Photo upload failed: ${uploadError.message}`)
         setSubmittingRating(false)
         return
       }
@@ -759,7 +766,7 @@ export default function TourismHome() {
     })
 
     if (error) {
-      setRatingMessage('Your review could not be saved. Please try again.')
+      setRatingMessage(error.message || 'Your review could not be saved. Please try again.')
     } else {
       setRatingMessage('Thanks, your review was saved with your account name.')
       setReviewComment('')
