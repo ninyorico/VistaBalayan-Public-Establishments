@@ -28,16 +28,16 @@ set public = true,
     file_size_limit = 5242880,
     allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp']::text[];
 
+-- Keep the storage policy independent of establishment_ratings. A storage
+-- upload happens before the review RPC and must not reference review columns.
 drop policy if exists "Public can upload review photos" on storage.objects;
 create policy "Public can upload review photos"
-on storage.objects for insert
-to authenticated
-with check (
-  bucket_id = 'review-photos'
-  and (storage.foldername(name))[1] in (
-    select e.id::text from public.establishments e where e.status = 'active'
-  )
-);
+ on storage.objects for insert
+ to authenticated
+ with check (
+   bucket_id = 'review-photos'
+   and name ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}\\.(jpg|jpeg|png|webp)$'
+ );
 
 drop policy if exists "Anyone can read review photos" on storage.objects;
 create policy "Anyone can read review photos"
