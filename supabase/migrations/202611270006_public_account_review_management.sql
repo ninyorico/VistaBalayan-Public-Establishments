@@ -75,6 +75,10 @@ $$;
 revoke all on function public.submit_establishment_rating(uuid, text, integer, text, text, text) from public;
 grant execute on function public.submit_establishment_rating(uuid, text, integer, text, text, text) to authenticated;
 
+-- PostgreSQL cannot change a function's OUT-column row type with
+-- CREATE OR REPLACE FUNCTION. Drop the prior account-history signature first.
+drop function if exists public.get_public_user_reviews();
+
 create or replace function public.get_public_user_reviews()
 returns table (
   id uuid,
