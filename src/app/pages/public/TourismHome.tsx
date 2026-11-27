@@ -337,6 +337,19 @@ const getAuthDisplayName = (user: { email?: string | null; user_metadata?: Recor
   return user?.email?.split('@')[0]?.trim().slice(0, 80) || ''
 }
 
+const persistGoogleProfileAvatar = async (user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> | null } | null) => {
+  const avatarUrl = getAuthAvatarUrl(user)
+  if (!user || !avatarUrl) return
+  const { data: existing } = await supabase.from('public_user_profiles').select('avatar_url').eq('id', user.id).maybeSingle()
+  if (!existing?.avatar_url) {
+    await supabase.from('public_user_profiles').upsert({
+      id: user.id,
+      display_name: getAuthDisplayName(user),
+      avatar_url: avatarUrl,
+    }, { onConflict: 'id' })
+  }
+}
+
 const buildLegacyReviewComment = (reviewerName: string, comment: string) => {
   const prefix = `${LEGACY_REVIEW_PREFIX}${reviewerName.trim()}`.slice(0, 120)
   const trimmedComment = comment.trim()
@@ -610,6 +623,7 @@ export default function TourismHome() {
     const syncPublicUser = (user: { id: string; email?: string | null; email_confirmed_at?: string | null; app_metadata?: { provider?: string }; user_metadata?: Record<string, unknown> } | null) => {
       setAuthUser(user ? { id: user.id, email: user.email, email_confirmed_at: user.email_confirmed_at, provider: user.app_metadata?.provider, display_name: getAuthDisplayName(user), avatar_url: getAuthAvatarUrl(user) } : null)
       setReviewerName(user ? getAuthDisplayName(user) : '')
+      void persistGoogleProfileAvatar(user)
     }
     void supabase.auth.getUser().then(({ data }) => syncPublicUser(data.user))
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -786,6 +800,11 @@ export default function TourismHome() {
         setSubmittingRating(false)
         return
       }
+    }
+
+    if (!authUser) {
+      setSubmittingRating(false)
+      return
     }
 
     await supabase.from('public_user_profiles').upsert({
