@@ -57,13 +57,14 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
       setLoading(false)
       return
     }
-    const [{ data: profileData }, { data: reviewData }] = await Promise.all([
+    const [{ data: profileData }, { data: reviewData, error: reviewError }] = await Promise.all([
       supabase.from('public_user_profiles').select('avatar_url').eq('id', currentUser.id).maybeSingle(),
       supabase.rpc('get_public_user_reviews'),
     ])
     setProfile({ avatar_url: profileData?.avatar_url || getAuthAvatarUrl(currentUser) })
     const nextReviews = (reviewData || []) as PublicReview[]
     setReviews(nextReviews)
+    if (reviewError) setMessage(reviewError.message)
     const ids = [...new Set(nextReviews.map((review) => review.establishment_id))]
     if (ids.length) {
       const { data } = await supabase.from('establishments').select('id,name').in('id', ids)
