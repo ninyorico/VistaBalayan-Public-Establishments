@@ -107,6 +107,9 @@ $$;
 revoke all on function public.get_public_user_reviews() from public;
 grant execute on function public.get_public_user_reviews() to authenticated;
 
+-- The existing RPC may expose a different OUT/return definition.
+drop function if exists public.update_establishment_rating(uuid, integer, text, text);
+
 create or replace function public.update_establishment_rating(
   p_rating_id uuid,
   p_rating integer,
