@@ -471,6 +471,8 @@ export default function TourismHome() {
   const [authEmail, setAuthEmail] = useState('')
   const [authPassword, setAuthPassword] = useState('')
   const [authMessage, setAuthMessage] = useState('')
+  const [authOtp, setAuthOtp] = useState('')
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState('')
   const [submittingRating, setSubmittingRating] = useState(false)
   const [ratingMessage, setRatingMessage] = useState('')
   const [selectedReviewRating, setSelectedReviewRating] = useState(0)
@@ -615,16 +617,67 @@ export default function TourismHome() {
 
   const signInForRating = async () => {
     setAuthMessage('')
-    const { error } = await supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPassword })
+    const normalizedEmail = authEmail.trim().toLowerCase()
+    if (!normalizedEmail || !authPassword) {
+      setAuthMessage('Enter your email address and password first.')
+      return
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password: authPassword })
     setAuthMessage(error ? error.message : 'Signed in. Confirm your email before submitting a rating.')
   }
 
   const signUpForRating = async () => {
     setAuthMessage('')
-    const { error } = await supabase.auth.signUp({ email: authEmail.trim(), password: authPassword, options: { emailRedirectTo: window.location.origin } })
-    setAuthMessage(error ? error.message : 'Account created. Check your email, verify it, then sign in to submit a rating.')
+    const normalizedEmail = authEmail.trim().toLowerCase()
+    if (!normalizedEmail || !authPassword) {
+      setAuthMessage('Enter an email address and a password with at least 6 characters.')
+      return
+    }
+    if (authPassword.length < 6) {
+      setAuthMessage('Your password must be at least 6 characters long.')
+      return
+    }
+    const displayName = normalizedEmail.split('@')[0].slice(0, 80)
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password: authPassword,
+      options: { data: { display_name: displayName, full_name: displayName, name: displayName } },
+    })
+    if (error) {
+      setAuthMessage(error.message)
+      return
+    }
+    if (data.session) {
+      setAuthMessage('Account created and signed in. Confirm your email before submitting a rating.')
+      return
+    }
+    setPendingVerificationEmail(normalizedEmail)
+    setAuthOtp('')
+    setAuthMessage('We sent a 6-digit verification code to your email. Enter it below to finish creating your account.')
   }
 
+  const verifyRatingEmail = async () => {
+    setAuthMessage('')
+    const normalizedEmail = pendingVerificationEmail.trim().toLowerCase()
+    const token = authOtp.trim()
+    if (!normalizedEmail || !/^\d{6}$/.test(token)) {
+      setAuthMessage('Enter the 6-digit code sent to your email.')
+      return
+    }
+    const { error } = await supabase.auth.verifyOtp({ email: normalizedEmail, token, type: 'signup' })
+    setAuthMessage(error ? error.message : 'Email verified. You are now signed in and can submit your rating.')
+    if (!error) {
+      setPendingVerificationEmail('')
+      setAuthOtp('')
+    }
+  }
+
+  const resendRatingEmailCode = async () => {
+    const normalizedEmail = pendingVerificationEmail.trim().toLowerCase()
+    if (!normalizedEmail) return
+    const { error } = await supabase.auth.resend({ type: 'signup', email: normalizedEmail })
+    setAuthMessage(error ? error.message : 'A new verification code was sent to your email.')
+  }
 
   const sendPasswordRecovery = async () => {
     setAuthMessage('')
@@ -1839,12 +1892,13 @@ export default function TourismHome() {
                   {!verifiedPublicAccount && (
                     <div className="rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-3">
                       <p className="text-xs leading-5 text-slate-600">To provide a rating or review, please create an account or sign in using Google or email. Only verified accounts can submit feedback to help maintain the reliability and accountability of establishment ratings.</p>
-                      <GoogleSignInButton onError={setAuthMessage} className="mt-2" />
+                      <GoogleSignInButton onError={setAuthMessage} text="signin_with" className="mt-2" />
                       <div className="mt-2 grid gap-2 sm:grid-cols-2">
                         <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} type="email" placeholder="Email address" className="rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] p-2.5 text-sm" />
                         <input value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} type="password" placeholder="Password (6+ characters)" className="rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] p-2.5 text-sm" />
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2"><Button type="button" onClick={() => void signInForRating()} variant="outline" className="rounded-xl text-xs">Sign in</Button><Button type="button" onClick={() => void signUpForRating()} variant="outline" className="rounded-xl text-xs">Create account</Button><Button type="button" onClick={() => void sendPasswordRecovery()} variant="ghost" className="rounded-xl text-xs">Forgot password?</Button></div>
+                      {pendingVerificationEmail && <div className="mt-3 rounded-xl border border-[#AFB3B5] bg-[#F5F8FF] p-3"><p className="text-xs text-slate-600">Enter the 6-digit code sent to <strong>{pendingVerificationEmail}</strong>.</p><div className="mt-2 flex flex-wrap gap-2"><input value={authOtp} onChange={(event) => setAuthOtp(event.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="OTP code" aria-label="Email verification code" className="min-w-0 flex-1 rounded-xl border border-[#AFB3B5] bg-white p-2.5 text-sm tracking-[0.3em]" /><Button type="button" onClick={() => void verifyRatingEmail()} className="rounded-xl bg-[#193364] text-xs text-white">Verify email</Button><Button type="button" onClick={() => void resendRatingEmailCode()} variant="ghost" className="rounded-xl text-xs">Resend code</Button></div></div>}
                       {authMessage && <p className="mt-2 text-xs text-slate-600">{authMessage}</p>}
                     </div>
                   )}

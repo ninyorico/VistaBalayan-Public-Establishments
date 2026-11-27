@@ -17,7 +17,7 @@ interface GoogleSignInButtonProps {
 export default function GoogleSignInButton({
   onError,
   onLoadingChange,
-  text = 'continue_with',
+  text = 'signin_with',
   className = '',
 }: GoogleSignInButtonProps) {
   const buttonRef = useRef<HTMLDivElement>(null)
@@ -93,7 +93,7 @@ export default function GoogleSignInButton({
   return (
     <div className={`relative flex min-h-11 w-full justify-center ${className}`} aria-busy={loading}>
       {loading && <span className="absolute inset-0 flex items-center justify-center rounded-2xl bg-[#193364] text-sm font-semibold text-white">Connecting to Google…</span>}
-      <div ref={buttonRef} className={`w-full justify-items-center ${!available ? 'hidden' : ''}`} aria-label="Continue with Google" />
+      <div ref={buttonRef} className={`w-full justify-items-center ${!available ? 'hidden' : ''}`} aria-label="Sign in with Google" />
     </div>
   )
 }

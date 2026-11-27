@@ -43,6 +43,8 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
+  const [otp, setOtp] = useState('')
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState('')
   const [editing, setEditing] = useState<string | null>(null)
   const [editRating, setEditRating] = useState(0)
   const [editComment, setEditComment] = useState('')
@@ -81,13 +83,60 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
   }, [])
 
   const signIn = async () => {
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!normalizedEmail || !password) {
+      setMessage('Enter your email address and password first.')
+      return
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password })
     setMessage(error ? error.message : 'Signed in. Check your verification status before submitting reviews.')
   }
 
   const signUp = async () => {
-    const { error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: `${window.location.origin}/account` } })
-    setMessage(error ? error.message : 'Account created. Check your email to verify the account.')
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!normalizedEmail || password.length < 6) {
+      setMessage('Enter an email address and a password with at least 6 characters.')
+      return
+    }
+    const displayName = normalizedEmail.split('@')[0].slice(0, 80)
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: { data: { display_name: displayName, full_name: displayName, name: displayName } },
+    })
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+    if (data.session) {
+      setMessage('Account created and signed in. Check your verification status before submitting reviews.')
+      return
+    }
+    setPendingVerificationEmail(normalizedEmail)
+    setOtp('')
+    setMessage('We sent a 6-digit verification code to your email. Enter it below to finish creating your account.')
+  }
+
+  const verifyEmail = async () => {
+    const normalizedEmail = pendingVerificationEmail.trim().toLowerCase()
+    const token = otp.trim()
+    if (!normalizedEmail || !/^\d{6}$/.test(token)) {
+      setMessage('Enter the 6-digit code sent to your email.')
+      return
+    }
+    const { error } = await supabase.auth.verifyOtp({ email: normalizedEmail, token, type: 'signup' })
+    setMessage(error ? error.message : 'Email verified. You are now signed in.')
+    if (!error) {
+      setPendingVerificationEmail('')
+      setOtp('')
+    }
+  }
+
+  const resendEmailCode = async () => {
+    const normalizedEmail = pendingVerificationEmail.trim().toLowerCase()
+    if (!normalizedEmail) return
+    const { error } = await supabase.auth.resend({ type: 'signup', email: normalizedEmail })
+    setMessage(error ? error.message : 'A new verification code was sent to your email.')
   }
 
 
@@ -167,10 +216,11 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
           {!user ? (
             <div className="mt-6 space-y-3">
               <p className="text-sm leading-6 text-slate-600">Browse the public site without an account. Sign in or create an account to submit and manage verified ratings and reviews.</p>
-              <GoogleSignInButton onError={setMessage} />
+              <GoogleSignInButton onError={setMessage} text="signin_with" />
               <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="Email address" className="w-full rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3 text-sm" />
               <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="Password" className="w-full rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3 text-sm" />
               <div className="flex flex-wrap gap-2"><Button type="button" onClick={() => void signIn()} variant="outline" className="rounded-xl">Sign in</Button><Button type="button" onClick={() => void signUp()} variant="outline" className="rounded-xl">Create account</Button><Button type="button" onClick={() => void recoverPassword()} variant="ghost" className="rounded-xl">Forgot password?</Button></div>
+              {pendingVerificationEmail && <div className="rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3"><p className="text-xs text-slate-600">Enter the 6-digit code sent to <strong>{pendingVerificationEmail}</strong>.</p><div className="mt-2 flex flex-wrap gap-2"><input value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="OTP code" aria-label="Email verification code" className="min-w-0 flex-1 rounded-xl border border-[#AFB3B5] bg-white p-2.5 text-sm tracking-[0.3em]" /><Button type="button" onClick={() => void verifyEmail()} className="rounded-xl bg-[#193364] text-white">Verify email</Button><Button type="button" onClick={() => void resendEmailCode()} variant="ghost" className="rounded-xl">Resend code</Button></div></div>}
             </div>
           ) : (
             <>
