@@ -1766,9 +1766,6 @@ export default function TourismHome() {
                 {selectedEstablishment.contact_number && <InfoRow icon={Phone} text={selectedEstablishment.contact_number} />}
                 {selectedEstablishment.email && <InfoRow icon={Mail} text={selectedEstablishment.email} />}
                 {selectedEstablishment.opening_hours && <InfoRow icon={Clock} text={selectedEstablishment.opening_hours} />}
-                <InfoRow icon={MessageSquare} text={selectedEstablishment.entrance_fee_verified_at && selectedEstablishment.entrance_fee !== null && selectedEstablishment.entrance_fee !== undefined
-                  ? `Entrance fee: ${selectedEstablishment.entrance_fee_currency || 'PHP'} ${selectedEstablishment.entrance_fee} · Verified ${new Date(selectedEstablishment.entrance_fee_verified_at).toLocaleDateString()}`
-                  : 'Entrance fee: Not verified by the Municipal Tourism Office'} />
                 {selectedEstablishment.website_url && (
                   <a href={selectedEstablishment.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-2xl bg-[#F5F8FF] p-3 font-medium text-[#193364] hover:bg-[#E5E8E1]">
                     <Globe className="h-4 w-4" strokeWidth={1.8} />
@@ -1858,7 +1855,6 @@ export default function TourismHome() {
                       {authMessage && <p className="mt-2 text-xs text-slate-600">{authMessage}</p>}
                     </div>
                   )}
-                  {verifiedPublicAccount && <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-medium text-emerald-700">Verified account: {authUser?.email}</p><Button type="button" onClick={() => void signOutPublicUser()} variant="ghost" className="rounded-xl text-xs text-slate-600"><LogOut className="h-4 w-4" /> Sign out</Button></div>}
                   <textarea
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value.slice(0, 500))}

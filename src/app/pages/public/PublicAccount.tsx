@@ -145,7 +145,7 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
     <main className={`${embedded ? 'relative bg-[#E0E5EC] p-5 sm:p-6' : 'min-h-screen bg-[#E0E5EC] px-4 py-8 text-[#193364] sm:px-8'}`} aria-busy="true" aria-label="Loading account">
       <div className="mx-auto max-w-3xl space-y-5 animate-pulse">
         {embedded && <div className="absolute right-4 top-4 h-8 w-8 rounded-xl bg-[#cbd3df]" />}
-        <section className="rounded-[2rem] bg-[#E0E5EC] p-5 shadow-[10px_10px_22px_rgba(163,177,198,.55),-10px_-10px_22px_rgba(255,255,255,.72)] sm:p-6">
+        <section className={`${embedded ? 'rounded-none bg-transparent p-5 shadow-none sm:p-6' : 'rounded-[2rem] bg-[#E0E5EC] p-5 shadow-[10px_10px_22px_rgba(163,177,198,.55),-10px_-10px_22px_rgba(255,255,255,.72)] sm:p-6'}`}>
           <div className="flex items-start gap-3">
             <div className="h-6 w-6 rounded-full bg-[#cbd3df]" />
             <div className="flex-1 space-y-2"><div className="h-3 w-24 rounded bg-[#cbd3df]" /><div className="h-7 w-56 max-w-full rounded bg-[#cbd3df]" /></div>
@@ -157,14 +157,14 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
   )
 
   return (
-    <main className={`${embedded ? 'relative bg-[#E0E5EC]' : 'min-h-screen bg-[#E0E5EC] px-4 py-8 text-[#193364] sm:px-8'}`}>
+    <main className={`${embedded ? 'relative bg-[#E0E5EC] p-0' : 'min-h-screen bg-[#E0E5EC] px-4 py-8 text-[#193364] sm:px-8'}`}>
       <div className="mx-auto max-w-3xl space-y-5">
         {embedded ? (
           <div className="absolute right-3 top-3 z-10"><Button type="button" onClick={onClose} variant="ghost" className="rounded-xl" aria-label="Close account"><X className="h-5 w-5" /></Button></div>
         ) : (
           <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold underline underline-offset-4"><ArrowLeft className="h-4 w-4" /> Back to tourism listings</Link>
         )}
-        <section className="rounded-[2rem] bg-[#E0E5EC] p-5 shadow-[10px_10px_22px_rgba(163,177,198,.55),-10px_-10px_22px_rgba(255,255,255,.72)] sm:p-6">
+        <section className={`${embedded ? 'rounded-none bg-transparent p-5 shadow-none sm:p-6' : 'rounded-[2rem] bg-[#E0E5EC] p-5 shadow-[10px_10px_22px_rgba(163,177,198,.55),-10px_-10px_22px_rgba(255,255,255,.72)] sm:p-6'}`}>
           <div className="flex items-start gap-3"><UserRound className="mt-1 h-6 w-6" /><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Public account</p><h1 className="mt-1 text-2xl font-semibold">Manage your feedback</h1></div></div>
           {!user ? (
             <div className="mt-6 space-y-3">
@@ -191,7 +191,7 @@ export default function PublicAccount({ embedded = false, onClose }: PublicAccou
           {message && <p className="mt-4 rounded-2xl bg-[#F5F8FF] p-3 text-sm text-slate-600" role="status">{message}</p>}
         </section>
 
-        {user && <section className="rounded-[2rem] bg-[#E0E5EC] p-6 shadow-[10px_10px_22px_rgba(163,177,198,.55),-10px_-10px_22px_rgba(255,255,255,.72)]"><h2 className="text-xl font-semibold">Your ratings and reviews</h2><div className="mt-4 space-y-3">{reviews.length === 0 ? <p className="rounded-2xl bg-[#F5F8FF] p-4 text-sm text-slate-600">You have not submitted any ratings or reviews.</p> : reviews.map((review) => <article key={review.id} className="rounded-2xl bg-[#F5F8FF] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-semibold">{establishments[review.establishment_id] || 'Establishment'}</p><p className="text-sm text-slate-600">{review.rating}/5 · {review.moderation_status}</p></div><div className="flex gap-2"><Button type="button" variant="outline" className="rounded-xl text-xs" onClick={() => { setEditing(review.id); setEditRating(review.rating); setEditComment(review.comment || '') }}>Edit</Button><Button type="button" variant="ghost" className="rounded-xl text-xs text-rose-700" onClick={() => void deleteReview(review.id)}><Trash2 className="h-4 w-4" /> Delete</Button></div></div>{review.comment && <p className="mt-2 text-sm leading-6 text-slate-600">{review.comment}</p>}{editing === review.id && <div className="mt-3 space-y-2"><input type="number" min="1" max="5" value={editRating} onChange={(event) => setEditRating(Number(event.target.value))} className="w-full rounded-xl border border-[#AFB3B5] bg-white p-2 text-sm" /><textarea value={editComment} onChange={(event) => setEditComment(event.target.value.slice(0, 500))} className="w-full rounded-xl border border-[#AFB3B5] bg-white p-2 text-sm" rows={3} /><Button type="button" onClick={() => void saveReview()} className="rounded-xl bg-[#193364] text-white">Save changes</Button></div>}</article>)}</div></section>}
+        {user && <section className={`${embedded ? 'border-t border-[#AFB3B5]/70 px-5 pb-5 pt-5 sm:px-6 sm:pb-6' : 'rounded-[2rem] bg-[#E0E5EC] p-6 shadow-[10px_10px_22px_rgba(163,177,198,.55),-10px_-10px_22px_rgba(255,255,255,.72)]'}`}><h2 className="text-xl font-semibold">Your ratings and reviews</h2><div className="mt-4 space-y-3">{reviews.length === 0 ? <p className="rounded-2xl bg-[#F5F8FF] p-4 text-sm text-slate-600">You have not submitted any ratings or reviews.</p> : reviews.map((review) => <article key={review.id} className="rounded-2xl bg-[#F5F8FF] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-semibold">{establishments[review.establishment_id] || 'Establishment'}</p><p className="text-sm text-slate-600">{review.rating}/5 · {review.moderation_status}</p></div><div className="flex gap-2"><Button type="button" variant="outline" className="rounded-xl text-xs" onClick={() => { setEditing(review.id); setEditRating(review.rating); setEditComment(review.comment || '') }}>Edit</Button><Button type="button" variant="ghost" className="rounded-xl text-xs text-rose-700" onClick={() => void deleteReview(review.id)}><Trash2 className="h-4 w-4" /> Delete</Button></div></div>{review.comment && <p className="mt-2 text-sm leading-6 text-slate-600">{review.comment}</p>}{editing === review.id && <div className="mt-3 space-y-2"><input type="number" min="1" max="5" value={editRating} onChange={(event) => setEditRating(Number(event.target.value))} className="w-full rounded-xl border border-[#AFB3B5] bg-white p-2 text-sm" /><textarea value={editComment} onChange={(event) => setEditComment(event.target.value.slice(0, 500))} className="w-full rounded-xl border border-[#AFB3B5] bg-white p-2 text-sm" rows={3} /><Button type="button" onClick={() => void saveReview()} className="rounded-xl bg-[#193364] text-white">Save changes</Button></div>}</article>)}</div></section>}
       </div>
     </main>
   )
