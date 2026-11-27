@@ -15,6 +15,14 @@ interface PublicReview {
   updated_at: string
 }
 
+const getAuthDisplayName = (user: { email?: string | null; user_metadata?: Record<string, unknown> | null } | null) => {
+  const metadata = user?.user_metadata || {}
+  const metadataName = [metadata.display_name, metadata.full_name, metadata.name]
+    .find((value): value is string => typeof value === 'string' && value.trim().length > 0)
+  if (metadataName) return metadataName.trim().slice(0, 80)
+  return user?.email?.split('@')[0]?.trim().slice(0, 80) || ''
+}
+
 export default function PublicAccount() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState({ display_name: '' })
@@ -41,7 +49,7 @@ export default function PublicAccount() {
       supabase.from('public_user_profiles').select('display_name').eq('id', currentUser.id).maybeSingle(),
       supabase.rpc('get_public_user_reviews'),
     ])
-    setProfile({ display_name: profileData?.display_name || currentUser.user_metadata?.display_name || '' })
+    setProfile({ display_name: profileData?.display_name || getAuthDisplayName(currentUser) })
     const nextReviews = (reviewData || []) as PublicReview[]
     setReviews(nextReviews)
     const ids = [...new Set(nextReviews.map((review) => review.establishment_id))]
@@ -80,8 +88,14 @@ export default function PublicAccount() {
 
   const saveProfile = async () => {
     if (!user || !profile.display_name.trim()) return
-    const { error } = await supabase.from('public_user_profiles').upsert({ id: user.id, display_name: profile.display_name.trim() })
-    setMessage(error ? error.message : 'Profile saved.')
+    const displayName = profile.display_name.trim().slice(0, 80)
+    const { error } = await supabase.from('public_user_profiles').upsert({ id: user.id, display_name: displayName })
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+    const { error: metadataError } = await supabase.auth.updateUser({ data: { display_name: displayName } })
+    setMessage(metadataError ? metadataError.message : 'Profile saved. This name will appear on your future reviews.')
   }
 
   const requestAccountDeletion = async () => {
@@ -124,7 +138,7 @@ export default function PublicAccount() {
           ) : (
             <>
               <p className="mt-5 text-sm text-slate-600">Signed in as <strong>{user.email}</strong>. Verification: {user.email_confirmed_at ? 'Verified' : 'Not verified'}.</p>
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row"><input value={profile.display_name} onChange={(event) => setProfile({ display_name: event.target.value.slice(0, 80) })} placeholder="Display name" className="flex-1 rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3 text-sm" /><Button type="button" onClick={() => void saveProfile()} className="rounded-2xl bg-[#193364] text-white"><Save className="h-4 w-4" /> Save profile</Button><Button type="button" onClick={() => void supabase.auth.signOut()} variant="outline" className="rounded-2xl"><LogOut className="h-4 w-4" /> Sign out</Button></div>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row"><div className="flex-1"><label htmlFor="public-display-name" className="mb-1 block text-xs font-semibold text-slate-600">Display name</label><input id="public-display-name" value={profile.display_name} onChange={(event) => setProfile({ display_name: event.target.value.slice(0, 80) })} placeholder="Your Google profile name" className="w-full rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3 text-sm" /><p className="mt-1 text-xs text-slate-500">Defaults to your Google profile name. You can change it anytime.</p></div><Button type="button" onClick={() => void saveProfile()} className="rounded-2xl bg-[#193364] text-white"><Save className="h-4 w-4" /> Save profile</Button><Button type="button" onClick={() => void supabase.auth.signOut()} variant="outline" className="rounded-2xl"><LogOut className="h-4 w-4" /> Sign out</Button></div>
               <div className="mt-3"><Button type="button" onClick={() => void requestAccountDeletion()} variant="ghost" className="rounded-xl text-xs text-rose-700">Request account removal</Button></div>
               {!user.email_confirmed_at && <p className="mt-3 rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">Verify your email before submitting a rating or review.</p>}
             </>

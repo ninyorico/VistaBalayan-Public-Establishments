@@ -136,7 +136,6 @@ interface BehaviorProfile {
 const BEHAVIOR_KEY = 'vistabalayan_public_behavior_v1'
 const RECOMMENDATION_PREFERENCES_KEY = 'vistabalayan_public_recommendation_preferences_v1'
 const RATING_VISITOR_KEY = 'vistabalayan_public_rating_visitor_v1'
-const REVIEWER_NAME_KEY = 'vistabalayan_public_reviewer_name_v1'
 const LEGACY_LOCAL_RATINGS_KEY = 'vistabalayan_public_local_ratings_v1'
 const LEGACY_REVIEW_PREFIX = 'Reviewed by '
 const PUBLIC_ESTABLISHMENTS_CACHE_KEY = 'public:establishments:v1'
@@ -323,18 +322,12 @@ const getRatingVisitorToken = () => {
   return token
 }
 
-const readReviewerName = () => {
-  if (typeof window === 'undefined') return ''
-  if (!hasPreferencesConsent()) return ''
-  window.localStorage.removeItem(LEGACY_LOCAL_RATINGS_KEY)
-  return window.localStorage.getItem(REVIEWER_NAME_KEY)?.trim() || ''
-}
-
-const saveReviewerName = (name: string) => {
-  if (typeof window === 'undefined') return
-  if (!hasPreferencesConsent()) return
-  const trimmedName = name.trim()
-  if (trimmedName) window.localStorage.setItem(REVIEWER_NAME_KEY, trimmedName)
+const getAuthDisplayName = (user: { email?: string | null; user_metadata?: Record<string, unknown> | null } | null) => {
+  const metadata = user?.user_metadata || {}
+  const metadataName = [metadata.display_name, metadata.full_name, metadata.name]
+    .find((value): value is string => typeof value === 'string' && value.trim().length > 0)
+  if (metadataName) return metadataName.trim().slice(0, 80)
+  return user?.email?.split('@')[0]?.trim().slice(0, 80) || ''
 }
 
 const buildLegacyReviewComment = (reviewerName: string, comment: string) => {
@@ -456,14 +449,14 @@ export default function TourismHome() {
   const [preferenceEditorOpen, setPreferenceEditorOpen] = useState(false)
   const [ratingSummaries, setRatingSummaries] = useState<Record<string, RatingSummary>>({})
   const [ratingVisitorToken, setRatingVisitorToken] = useState('')
-  const [authUser, setAuthUser] = useState<{ id: string; email?: string; email_confirmed_at?: string | null; provider?: string } | null>(null)
+  const [authUser, setAuthUser] = useState<{ id: string; email?: string; email_confirmed_at?: string | null; provider?: string; display_name?: string } | null>(null)
   const [authEmail, setAuthEmail] = useState('')
   const [authPassword, setAuthPassword] = useState('')
   const [authMessage, setAuthMessage] = useState('')
   const [submittingRating, setSubmittingRating] = useState(false)
   const [ratingMessage, setRatingMessage] = useState('')
   const [selectedReviewRating, setSelectedReviewRating] = useState(0)
-  const [reviewerName, setReviewerName] = useState(readReviewerName())
+  const [reviewerName, setReviewerName] = useState('')
   const [reviewComment, setReviewComment] = useState('')
   const [reviewPhoto, setReviewPhoto] = useState<File | null>(null)
   const [reviewPhotoPreview, setReviewPhotoPreview] = useState('')
@@ -588,10 +581,23 @@ export default function TourismHome() {
     const visitorToken = getRatingVisitorToken()
     setRatingVisitorToken(visitorToken)
     fetchEstablishments(visitorToken)
-    void supabase.auth.getUser().then(({ data }) => setAuthUser(data.user ? { id: data.user.id, email: data.user.email, email_confirmed_at: data.user.email_confirmed_at, provider: data.user.app_metadata?.provider } : null))
+    const syncPublicUser = async (user: { id: string; email?: string | null; email_confirmed_at?: string | null; app_metadata?: { provider?: string }; user_metadata?: Record<string, unknown> } | null) => {
+      setAuthUser(user ? { id: user.id, email: user.email, email_confirmed_at: user.email_confirmed_at, provider: user.app_metadata?.provider, display_name: getAuthDisplayName(user) } : null)
+      if (!user) {
+        setReviewerName('')
+        return
+      }
+      const { data: profileData } = await supabase
+        .from('public_user_profiles')
+        .select('display_name')
+        .eq('id', user.id)
+        .maybeSingle()
+      setReviewerName(profileData?.display_name?.trim() || getAuthDisplayName(user))
+    }
+    void supabase.auth.getUser().then(({ data }) => syncPublicUser(data.user))
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       const user = session?.user
-      setAuthUser(user ? { id: user.id, email: user.email, email_confirmed_at: user.email_confirmed_at, provider: user.app_metadata?.provider } : null)
+      void syncPublicUser(user)
     })
     return () => authListener.subscription.unsubscribe()
   }, [])
@@ -720,9 +726,9 @@ export default function TourismHome() {
     setSubmittingRating(true)
     setRatingMessage('')
 
-    const name = reviewerName.trim()
+    const name = reviewerName.trim() || getAuthDisplayName(authUser)
     if (!name) {
-      setRatingMessage('Please enter your name before submitting your review.')
+      setRatingMessage('Your account does not have a display name yet. Open Account and save your profile before submitting a review.')
       setSubmittingRating(false)
       return
     }
@@ -758,12 +764,10 @@ export default function TourismHome() {
       p_photo_path: photoPath,
     })
 
-    saveReviewerName(name)
-
     if (error) {
       setRatingMessage('Your review could not be saved. Please try again.')
     } else {
-      setRatingMessage('Thanks, your review was saved with your name.')
+      setRatingMessage('Thanks, your review was saved with your account name.')
       setReviewComment('')
       setReviewPhoto(null)
       setReviewPhotoPreview('')
@@ -988,7 +992,7 @@ export default function TourismHome() {
     setShowSelectedMap(false)
     setRatingMessage('')
     setSelectedReviewRating(ratingSummaries[establishment.id]?.visitorRating || 0)
-    setReviewerName(readReviewerName())
+    setReviewerName(authUser?.display_name || '')
     setReviewComment('')
     fetchRatingReviews(establishment.id)
     const next = {
@@ -1198,15 +1202,6 @@ export default function TourismHome() {
 
   return (
     <main className="min-h-[100dvh] bg-[#E0E5EC] text-[#193364]">
-      <nav className="relative z-30 border-b border-[#AFB3B5] bg-[#E0E5EC]/95 px-5 py-3 backdrop-blur sm:px-6 lg:px-10" aria-label="Main navigation">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4">
-          <a href="/" className="text-sm font-bold tracking-[-0.02em] text-[#193364] sm:text-base">VistaBalayan Tourism</a>
-          <a href="/account" aria-label="Open account management" className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] px-3 text-sm font-semibold text-[#193364] shadow-[3px_3px_7px_rgba(163,177,198,0.35),-3px_-3px_7px_rgba(255,255,255,0.55)] transition hover:bg-[#E5E8E1] active:translate-y-[1px]">
-            <UserRound className="h-5 w-5" strokeWidth={1.8} />
-            <span className="hidden sm:inline">Account</span>
-          </a>
-        </div>
-      </nav>
       <section className="relative overflow-hidden border-b border-[#AFB3B5] bg-[#E0E5EC] text-[#193364]">
         <img
           src="/balayan-church-hero.jpg"
@@ -1216,6 +1211,10 @@ export default function TourismHome() {
         <div className="absolute inset-0 bg-[#E0E5EC]/30" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#193364]/85 via-[#193364]/55 to-transparent" />
         <div className="relative mx-auto grid min-h-0 max-w-[1440px] grid-cols-1 items-center gap-8 px-5 py-10 sm:px-6 lg:min-h-[58dvh] lg:grid-cols-[1.15fr_0.85fr] lg:gap-12 lg:px-10 lg:py-12">
+          <a href="/account" aria-label="Open account management" className="absolute right-5 top-10 z-20 inline-flex min-h-11 items-center gap-2 rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] px-3 text-sm font-semibold text-[#193364] shadow-[3px_3px_7px_rgba(163,177,198,0.35),-3px_-3px_7px_rgba(255,255,255,0.55)] transition hover:bg-[#E5E8E1] active:translate-y-[1px] sm:right-6 lg:right-10 lg:top-12">
+            <UserRound className="h-5 w-5" strokeWidth={1.8} />
+            <span>Account</span>
+          </a>
           <div className="w-full lg:max-w-3xl">
             <Badge className="mb-5 rounded-full border-[#AFB3B5] bg-[#E5E8E1] px-4 py-2 text-sm font-medium text-[#193364] shadow-[inset_3px_3px_7px_rgba(163,177,198,0.35),inset_-3px_-3px_7px_rgba(255,255,255,0.65)] hover:bg-[#E5E8E1]">
               <Sparkles className="h-4 w-4" strokeWidth={1.8} />
@@ -1849,15 +1848,10 @@ export default function TourismHome() {
                     </div>
                   )}
                   {verifiedPublicAccount && <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-medium text-emerald-700">Verified account: {authUser?.email}</p><Button type="button" onClick={() => void signOutPublicUser()} variant="ghost" className="rounded-xl text-xs text-slate-600"><LogOut className="h-4 w-4" /> Sign out</Button></div>}
-                  <input
-                    type="text"
-                    value={reviewerName}
-                    onChange={(e) => setReviewerName(e.target.value.slice(0, 80))}
-                    placeholder="Your name"
-                    aria-label="Your name"
-                    required
-                    className="w-full rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-4 focus:ring-[#6C9772]/25"
-                  />
+                  <div className="rounded-2xl border border-[#AFB3B5] bg-[#E5E8E1] p-3 text-sm text-slate-600">
+                    Review name: <strong className="text-[#193364]">{reviewerName || 'Your account profile'}</strong>
+                    <span className="mt-1 block text-xs text-slate-500">This comes from your Account profile. You can change it there.</span>
+                  </div>
                   <textarea
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value.slice(0, 500))}
@@ -1902,11 +1896,11 @@ export default function TourismHome() {
                     )}
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-xs text-slate-500">Name required · {reviewComment.length}/500 comment characters</p>
+                    <p className="text-xs text-slate-500">Your account profile name will be shown · {reviewComment.length}/500 comment characters</p>
                     <Button
                       type="button"
                       onClick={submitRating}
-                      disabled={submittingRating || selectedReviewRating < 1 || !reviewerName.trim()}
+                      disabled={submittingRating || selectedReviewRating < 1 || !verifiedPublicAccount}
                       className="rounded-2xl bg-[#193364] px-5 py-2.5 text-sm font-semibold text-white shadow-none transition hover:bg-[#193364] disabled:cursor-not-allowed disabled:opacity-55"
                     >
                       {submittingRating ? 'Saving...' : 'Submit rating'}
