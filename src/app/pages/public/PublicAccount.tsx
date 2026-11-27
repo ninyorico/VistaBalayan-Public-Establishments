@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { ArrowLeft, LogIn, LogOut, Save, Trash2, UserRound } from 'lucide-react'
+import { ArrowLeft, Camera, LogIn, LogOut, Trash2, UserRound, X } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { Button } from '../../components/ui/button'
 
@@ -15,17 +15,28 @@ interface PublicReview {
   updated_at: string
 }
 
-const getAuthDisplayName = (user: { email?: string | null; user_metadata?: Record<string, unknown> | null } | null) => {
-  const metadata = user?.user_metadata || {}
-  const metadataName = [metadata.display_name, metadata.full_name, metadata.name]
-    .find((value): value is string => typeof value === 'string' && value.trim().length > 0)
-  if (metadataName) return metadataName.trim().slice(0, 80)
-  return user?.email?.split('@')[0]?.trim().slice(0, 80) || ''
+interface PublicAccountProps {
+  embedded?: boolean
+  onClose?: () => void
 }
 
-export default function PublicAccount() {
+const getAuthDisplayName = (user: { email?: string | null; user_metadata?: Record<string, unknown> | null } | null) => {
+  const metadata = user?.user_metadata || {}
+  const metadataName = [metadata.full_name, metadata.name, metadata.display_name]
+    .find((value): value is string => typeof value === 'string' && value.trim().length > 0)
+  if (metadataName) return metadataName.trim().slice(0, 80)
+  return user?.email?.split('@')[0]?.trim().slice(0, 80) || 'Google user'
+}
+
+const getAuthAvatarUrl = (user: { user_metadata?: Record<string, unknown> | null } | null) => {
+  const metadata = user?.user_metadata || {}
+  const value = metadata.avatar_url || metadata.picture
+  return typeof value === 'string' && value.trim() ? value : ''
+}
+
+export default function PublicAccount({ embedded = false, onClose }: PublicAccountProps) {
   const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState({ display_name: '' })
+  const [profile, setProfile] = useState({ avatar_url: '' })
   const [reviews, setReviews] = useState<PublicReview[]>([])
   const [establishments, setEstablishments] = useState<Record<string, string>>({})
   const [email, setEmail] = useState('')
@@ -35,6 +46,7 @@ export default function PublicAccount() {
   const [editRating, setEditRating] = useState(0)
   const [editComment, setEditComment] = useState('')
   const [loading, setLoading] = useState(true)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   const loadAccount = async () => {
     setLoading(true)
@@ -46,10 +58,10 @@ export default function PublicAccount() {
       return
     }
     const [{ data: profileData }, { data: reviewData }] = await Promise.all([
-      supabase.from('public_user_profiles').select('display_name').eq('id', currentUser.id).maybeSingle(),
+      supabase.from('public_user_profiles').select('avatar_url').eq('id', currentUser.id).maybeSingle(),
       supabase.rpc('get_public_user_reviews'),
     ])
-    setProfile({ display_name: profileData?.display_name || getAuthDisplayName(currentUser) })
+    setProfile({ avatar_url: profileData?.avatar_url || getAuthAvatarUrl(currentUser) })
     const nextReviews = (reviewData || []) as PublicReview[]
     setReviews(nextReviews)
     const ids = [...new Set(nextReviews.map((review) => review.establishment_id))]
@@ -86,16 +98,26 @@ export default function PublicAccount() {
     setMessage(error ? error.message : 'If an account exists for that email, a recovery message was sent.')
   }
 
-  const saveProfile = async () => {
-    if (!user || !profile.display_name.trim()) return
-    const displayName = profile.display_name.trim().slice(0, 80)
-    const { error } = await supabase.from('public_user_profiles').upsert({ id: user.id, display_name: displayName })
-    if (error) {
-      setMessage(error.message)
+  const uploadProfilePhoto = async (file: File) => {
+    if (!user) return
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      setMessage('Choose a JPG, PNG, or WebP image up to 5 MB.')
       return
     }
-    const { error: metadataError } = await supabase.auth.updateUser({ data: { display_name: displayName } })
-    setMessage(metadataError ? metadataError.message : 'Profile saved. This name will appear on your future reviews.')
+    setUploadingPhoto(true)
+    const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+    const path = `${user.id}/${crypto.randomUUID()}.${extension}`
+    const { error: uploadError } = await supabase.storage.from('public-profile-photos').upload(path, file, { cacheControl: '3600', contentType: file.type, upsert: false })
+    if (uploadError) {
+      setMessage(uploadError.message)
+      setUploadingPhoto(false)
+      return
+    }
+    const { data } = supabase.storage.from('public-profile-photos').getPublicUrl(path)
+    const { error: profileError } = await supabase.from('public_user_profiles').upsert({ id: user.id, display_name: getAuthDisplayName(user), avatar_url: data.publicUrl })
+    setMessage(profileError ? profileError.message : 'Profile picture updated.')
+    if (!profileError) setProfile({ avatar_url: data.publicUrl })
+    setUploadingPhoto(false)
   }
 
   const requestAccountDeletion = async () => {
@@ -106,7 +128,7 @@ export default function PublicAccount() {
 
   const saveReview = async () => {
     if (!editing || editRating < 1) return
-    const { error } = await supabase.rpc('update_establishment_rating', { p_rating_id: editing, p_rating: editRating, p_comment: editComment.trim() || null, p_reviewer_name: profile.display_name.trim() || null })
+    const { error } = await supabase.rpc('update_establishment_rating', { p_rating_id: editing, p_rating: editRating, p_comment: editComment.trim() || null, p_reviewer_name: getAuthDisplayName(user) })
     setMessage(error ? error.message : 'Review submitted for moderation again.')
     setEditing(null)
     if (!error) await loadAccount()
@@ -119,12 +141,16 @@ export default function PublicAccount() {
     if (!error) await loadAccount()
   }
 
-  if (loading) return <main className="min-h-screen bg-[#E0E5EC] p-8 text-[#193364]">Loading account…</main>
+  if (loading) return <main className={`${embedded ? 'p-8' : 'min-h-screen p-8'} bg-[#E0E5EC] text-[#193364]`}>Loading account…</main>
 
   return (
-    <main className="min-h-screen bg-[#E0E5EC] px-4 py-8 text-[#193364] sm:px-8">
+    <main className={`${embedded ? 'bg-[#E0E5EC]' : 'min-h-screen bg-[#E0E5EC] px-4 py-8 text-[#193364] sm:px-8'}`}>
       <div className="mx-auto max-w-3xl space-y-6">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold underline underline-offset-4"><ArrowLeft className="h-4 w-4" /> Back to tourism listings</Link>
+        {embedded ? (
+          <div className="flex justify-end"><Button type="button" onClick={onClose} variant="ghost" className="rounded-xl" aria-label="Close account"><X className="h-5 w-5" /></Button></div>
+        ) : (
+          <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold underline underline-offset-4"><ArrowLeft className="h-4 w-4" /> Back to tourism listings</Link>
+        )}
         <section className="rounded-[2rem] bg-[#E0E5EC] p-6 shadow-[10px_10px_22px_rgba(163,177,198,.55),-10px_-10px_22px_rgba(255,255,255,.72)]">
           <div className="flex items-start gap-3"><UserRound className="mt-1 h-6 w-6" /><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Public account</p><h1 className="mt-1 text-2xl font-semibold">Manage your feedback</h1></div></div>
           {!user ? (
@@ -137,8 +163,14 @@ export default function PublicAccount() {
             </div>
           ) : (
             <>
-              <p className="mt-5 text-sm text-slate-600">Signed in as <strong>{user.email}</strong>. Verification: {user.email_confirmed_at ? 'Verified' : 'Not verified'}.</p>
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row"><div className="flex-1"><label htmlFor="public-display-name" className="mb-1 block text-xs font-semibold text-slate-600">Display name</label><input id="public-display-name" value={profile.display_name} onChange={(event) => setProfile({ display_name: event.target.value.slice(0, 80) })} placeholder="Your Google profile name" className="w-full rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] p-3 text-sm" /><p className="mt-1 text-xs text-slate-500">Defaults to your Google profile name. You can change it anytime.</p></div><Button type="button" onClick={() => void saveProfile()} className="rounded-2xl bg-[#193364] text-white"><Save className="h-4 w-4" /> Save profile</Button><Button type="button" onClick={() => void supabase.auth.signOut()} variant="outline" className="rounded-2xl"><LogOut className="h-4 w-4" /> Sign out</Button></div>
+              <div className="mt-5 flex flex-wrap items-center gap-4">
+                <div className="relative h-20 w-20 overflow-hidden rounded-full border-2 border-white bg-[#E5E8E1] shadow-[inset_3px_3px_7px_rgba(163,177,198,.35),inset_-3px_-3px_7px_rgba(255,255,255,.65)]">
+                  {profile.avatar_url ? <img src={profile.avatar_url} alt={`${getAuthDisplayName(user)} profile`} className="h-full w-full object-cover" /> : <UserRound className="absolute inset-0 m-auto h-9 w-9 text-[#193364]" />}
+                </div>
+                <div className="min-w-0 flex-1"><p className="text-sm text-slate-600">Signed in as <strong>{user.email}</strong>.</p><p className="mt-1 text-lg font-semibold text-[#193364]">{getAuthDisplayName(user)}</p><p className="text-xs text-slate-500">Name is taken from your Google profile and cannot be changed here.</p></div>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-[#193364] px-4 py-2.5 text-sm font-semibold text-white"><Camera className="h-4 w-4" /> {uploadingPhoto ? 'Uploading…' : 'Change photo'}<input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={uploadingPhoto} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadProfilePhoto(file); event.currentTarget.value = '' }} /></label>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2"><Button type="button" onClick={() => void supabase.auth.signOut()} variant="outline" className="rounded-2xl"><LogOut className="h-4 w-4" /> Sign out</Button><span className="text-xs text-slate-500">Verification: {user.email_confirmed_at ? 'Verified' : 'Not verified'}.</span></div>
               <div className="mt-3"><Button type="button" onClick={() => void requestAccountDeletion()} variant="ghost" className="rounded-xl text-xs text-rose-700">Request account removal</Button></div>
               {!user.email_confirmed_at && <p className="mt-3 rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">Verify your email before submitting a rating or review.</p>}
             </>

@@ -34,6 +34,7 @@ import { supabase } from '../../../lib/supabase'
 import { hasPreferencesConsent } from '../../../lib/consent'
 import { getPublicCache, invalidatePublicCache, setPublicCache } from '../../../lib/publicCache'
 import { sortPublicEstablishments } from '../../../lib/directorySort'
+import PublicAccount from './PublicAccount'
 
 interface Establishment {
   id: string
@@ -324,7 +325,7 @@ const getRatingVisitorToken = () => {
 
 const getAuthDisplayName = (user: { email?: string | null; user_metadata?: Record<string, unknown> | null } | null) => {
   const metadata = user?.user_metadata || {}
-  const metadataName = [metadata.display_name, metadata.full_name, metadata.name]
+  const metadataName = [metadata.full_name, metadata.name, metadata.display_name]
     .find((value): value is string => typeof value === 'string' && value.trim().length > 0)
   if (metadataName) return metadataName.trim().slice(0, 80)
   return user?.email?.split('@')[0]?.trim().slice(0, 80) || ''
@@ -449,7 +450,7 @@ export default function TourismHome() {
   const [preferenceEditorOpen, setPreferenceEditorOpen] = useState(false)
   const [ratingSummaries, setRatingSummaries] = useState<Record<string, RatingSummary>>({})
   const [ratingVisitorToken, setRatingVisitorToken] = useState('')
-  const [authUser, setAuthUser] = useState<{ id: string; email?: string; email_confirmed_at?: string | null; provider?: string; display_name?: string } | null>(null)
+  const [authUser, setAuthUser] = useState<{ id: string; email?: string | null; email_confirmed_at?: string | null; provider?: string; display_name?: string } | null>(null)
   const [authEmail, setAuthEmail] = useState('')
   const [authPassword, setAuthPassword] = useState('')
   const [authMessage, setAuthMessage] = useState('')
@@ -477,6 +478,7 @@ export default function TourismHome() {
   const [recommendationExplanation, setRecommendationExplanation] = useState('')
   const [recommendationExplanationLoading, setRecommendationExplanationLoading] = useState(false)
   const [recommendationExplanationError, setRecommendationExplanationError] = useState('')
+  const [accountModalOpen, setAccountModalOpen] = useState(false)
   const recommendationExplanationRequests = useRef(new Map<string, Promise<string | null>>())
 
   useEffect(() => {
@@ -581,22 +583,13 @@ export default function TourismHome() {
     const visitorToken = getRatingVisitorToken()
     setRatingVisitorToken(visitorToken)
     fetchEstablishments(visitorToken)
-    const syncPublicUser = async (user: { id: string; email?: string | null; email_confirmed_at?: string | null; app_metadata?: { provider?: string }; user_metadata?: Record<string, unknown> } | null) => {
+    const syncPublicUser = (user: { id: string; email?: string | null; email_confirmed_at?: string | null; app_metadata?: { provider?: string }; user_metadata?: Record<string, unknown> } | null) => {
       setAuthUser(user ? { id: user.id, email: user.email, email_confirmed_at: user.email_confirmed_at, provider: user.app_metadata?.provider, display_name: getAuthDisplayName(user) } : null)
-      if (!user) {
-        setReviewerName('')
-        return
-      }
-      const { data: profileData } = await supabase
-        .from('public_user_profiles')
-        .select('display_name')
-        .eq('id', user.id)
-        .maybeSingle()
-      setReviewerName(profileData?.display_name?.trim() || getAuthDisplayName(user))
+      setReviewerName(user ? getAuthDisplayName(user) : '')
     }
     void supabase.auth.getUser().then(({ data }) => syncPublicUser(data.user))
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const user = session?.user
+      const user = session?.user || null
       void syncPublicUser(user)
     })
     return () => authListener.subscription.unsubscribe()
@@ -743,7 +736,7 @@ export default function TourismHome() {
     let photoPath: string | null = null
     if (reviewPhoto) {
       const extension = reviewPhoto.name.split('.').pop()?.toLowerCase() || 'jpg'
-      photoPath = `${selectedEstablishment.id}/${authUser?.id}/${crypto.randomUUID()}.${extension}`
+      photoPath = `${selectedEstablishment.id}/${crypto.randomUUID()}.${extension}`
       const { error: uploadError } = await supabase.storage.from('review-photos').upload(photoPath, reviewPhoto, {
         cacheControl: '3600',
         contentType: reviewPhoto.type,
@@ -758,6 +751,7 @@ export default function TourismHome() {
 
     const { error } = await supabase.rpc('submit_establishment_rating', {
       p_establishment_id: selectedEstablishment.id,
+      p_visitor_token: visitorToken,
       p_rating: selectedReviewRating,
       p_comment: comment || null,
       p_reviewer_name: name,
@@ -1211,10 +1205,10 @@ export default function TourismHome() {
         <div className="absolute inset-0 bg-[#E0E5EC]/30" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#193364]/85 via-[#193364]/55 to-transparent" />
         <div className="relative mx-auto grid min-h-0 max-w-[1440px] grid-cols-1 items-center gap-8 px-5 py-10 sm:px-6 lg:min-h-[58dvh] lg:grid-cols-[1.15fr_0.85fr] lg:gap-12 lg:px-10 lg:py-12">
-          <a href="/account" aria-label="Open account management" className="absolute right-5 top-10 z-20 inline-flex min-h-11 items-center gap-2 rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] px-3 text-sm font-semibold text-[#193364] shadow-[3px_3px_7px_rgba(163,177,198,0.35),-3px_-3px_7px_rgba(255,255,255,0.55)] transition hover:bg-[#E5E8E1] active:translate-y-[1px] sm:right-6 lg:right-10 lg:top-12">
+          <button type="button" onClick={() => setAccountModalOpen(true)} aria-label="Open account management" className="absolute right-5 top-10 z-20 inline-flex min-h-11 items-center gap-2 rounded-2xl border border-[#AFB3B5] bg-[#F5F8FF] px-3 text-sm font-semibold text-[#193364] shadow-[3px_3px_7px_rgba(163,177,198,0.35),-3px_-3px_7px_rgba(255,255,255,0.55)] transition hover:bg-[#E5E8E1] active:translate-y-[1px] sm:right-6 lg:right-10 lg:top-12">
             <UserRound className="h-5 w-5" strokeWidth={1.8} />
             <span>Account</span>
-          </a>
+          </button>
           <div className="w-full lg:max-w-3xl">
             <Badge className="mb-5 rounded-full border-[#AFB3B5] bg-[#E5E8E1] px-4 py-2 text-sm font-medium text-[#193364] shadow-[inset_3px_3px_7px_rgba(163,177,198,0.35),inset_-3px_-3px_7px_rgba(255,255,255,0.65)] hover:bg-[#E5E8E1]">
               <Sparkles className="h-4 w-4" strokeWidth={1.8} />
@@ -1293,7 +1287,7 @@ export default function TourismHome() {
             </Card>
           </div>
 
-          <Card className="public-neumorphic-soft-surface hidden rounded-[2rem] text-[#193364] lg:block">
+          <Card className="public-neumorphic-soft-surface hidden rounded-[2rem] text-[#193364] lg:mt-14 lg:block">
             <CardContent className="p-3 !pb-3">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
@@ -1358,10 +1352,19 @@ export default function TourismHome() {
         </div>
       </section>
 
+      {accountModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-[#193364]/45 p-4 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label="Account management" onMouseDown={(event) => { if (event.target === event.currentTarget) setAccountModalOpen(false) }}>
+          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-3xl overflow-y-auto rounded-[2rem] bg-[#E0E5EC] shadow-[18px_18px_40px_rgba(14,33,70,.32),-8px_-8px_24px_rgba(255,255,255,.28)] sm:max-h-[calc(100dvh-3rem)]">
+            <PublicAccount embedded onClose={() => setAccountModalOpen(false)} />
+          </div>
+        </div>
+      )}
+
       <section className="mx-auto max-w-[1440px] px-5 py-8 sm:px-6 lg:px-10 lg:py-7">
         <Card className="rounded-[1.75rem] border-[#AFB3B5] bg-[#E0E5EC] shadow-[9px_9px_16px_rgba(163,177,198,0.60),-9px_-9px_16px_rgba(255,255,255,0.55)]">
           <CardContent className="flex flex-col gap-5 p-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
               {categories.map((cat) => {
                 const Icon = cat.icon
                 return (
@@ -1391,6 +1394,7 @@ export default function TourismHome() {
                 <option value="name">Name A–Z</option>
               </select>
             </label>
+            </div>
             <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
               <Filter className="h-4 w-4" strokeWidth={1.8} />
               Showing {filtered.length} resorts and hotels
